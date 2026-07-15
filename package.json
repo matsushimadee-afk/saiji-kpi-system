@@ -1,0 +1,28 @@
+{
+  "name": "saiji-kpi-system",
+  "private": true,
+  "version": "1.0.0",
+  "description": "催事販路専用リアルタイムKPI管理システム",
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,green \"npm run dev -w server\" \"npm run dev -w client\"",
+    "start": "npm run start -w server",
+    "deploy:build": "npm install && npm run build -w client",
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "setup": "npm install && npm run db:reset",
+    "db:migrate": "npm run migrate -w server",
+    "db:seed": "npm run seed -w server",
+    "db:reset": "npm run db:reset -w server",
+    "sync:roster": "npm run sync:roster -w server",
+    "sample:entries": "npm run sample:entries -w server",
+    "build": "npm run build -w server && npm run build -w client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

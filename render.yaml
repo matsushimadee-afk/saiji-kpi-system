@@ -1,0 +1,31 @@
+# Render Blueprint（無料・カード不要）
+# Render で「New +」→「Blueprint」からこのリポジトリを指定すると、
+# 下記の設定でサービスが作成されます。secret系(sync:false)は作成時に入力を求められます。
+services:
+  - type: web
+    name: saiji-kpi
+    runtime: node
+    plan: free
+    # 本番ビルド（--include=dev で vite などのビルド用依存も入れる）
+    buildCommand: npm install --include=dev && npm run build -w client
+    startCommand: npm run start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SERVE_CLIENT
+        value: "true"
+      - key: DB_CLIENT
+        value: pg
+      - key: JWT_EXPIRES_IN
+        value: 12h
+      - key: ROSTER_SHEET_ID
+        value: 1ya61d3P2cWppsnrXnQCLMNAeOrobtqitRze-Q5chgHA
+      # 自動生成される署名鍵
+      - key: JWT_SECRET
+        generateValue: true
+      # 作成時に入力（Neonの接続文字列 / GoogleクライアントID）
+      - key: DATABASE_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false

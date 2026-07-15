@@ -1,0 +1,97 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.hello { font-size: 1.3rem; font-weight: 800; }
+.date { color: var(--text-muted); font-size: 0.85rem; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.kpiTop {
+  padding: var(--space-4) var(--space-5) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.kpiHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.kpiName {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.counts {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.count {
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.target { color: var(--text-muted); font-size: 0.95rem; font-weight: 600; }
+
+.addBtn {
+  border: none;
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 800;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  transition: filter var(--transition), transform var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.addBtn:hover { filter: brightness(1.06); }
+.addBtn:active { transform: scale(0.98); filter: brightness(0.94); }
+.plus { font-size: 1.5rem; }
+
+.undoBar {
+  position: sticky;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0));
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 40;
+}
+.undoBar > * { pointer-events: auto; }
+
+@media (min-width: 640px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 768px) {
+  .undoBar { bottom: var(--space-6); }
+}

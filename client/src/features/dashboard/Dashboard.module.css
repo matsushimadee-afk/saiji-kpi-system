@@ -1,0 +1,121 @@
+.page { display: flex; flex-direction: column; gap: var(--space-5); }
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.title { font-size: 1.4rem; font-weight: 800; }
+.scope { color: var(--text-muted); font-size: 0.85rem; margin-top: 2px; }
+.controls { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--success);
+}
+.liveDot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--success);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* KPI 合計カードのグリッド */
+.totals {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  box-shadow: var(--shadow-sm);
+}
+.statHead { display: flex; align-items: center; justify-content: space-between; }
+.statName { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.9rem; }
+.statCount { font-size: 1.9rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+.statTarget { color: var(--text-muted); font-size: 0.78rem; font-weight: 600; }
+.dot { width: 9px; height: 9px; border-radius: 50%; }
+
+/* 2 カラムレイアウト (ランキング + チャート) */
+.columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+/* ランキング */
+.rankList { display: flex; flex-direction: column; }
+.rankRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border);
+}
+.rankRow:first-child { border-top: none; }
+.rank {
+  width: 26px;
+  text-align: center;
+  font-weight: 800;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.rankMain { flex: 1; min-width: 0; }
+.rankLabel { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rankSub { font-size: 0.72rem; color: var(--text-faint); }
+.rankChips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 3px; }
+.chip {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border-radius: var(--radius-full);
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+.rankPrimary {
+  font-size: 1.25rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+}
+
+/* 時間帯チャート */
+.chart { width: 100%; }
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 160px;
+  padding-top: var(--space-3);
+}
+.barCol { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.bar {
+  width: 100%;
+  max-width: 22px;
+  border-radius: 5px 5px 0 0;
+  background: var(--brand);
+  min-height: 2px;
+  transition: height 400ms ease;
+}
+.barLabel { font-size: 0.62rem; color: var(--text-faint); }
+.barValue { font-size: 0.6rem; color: var(--text-muted); font-weight: 700; }
+
+@media (min-width: 640px) {
+  .totals { grid-template-columns: repeat(4, 1fr); }
+}
+@media (min-width: 900px) {
+  .columns { grid-template-columns: 1fr 1fr; }
+  .columnsWide { grid-template-columns: 2fr 1fr; }
+}

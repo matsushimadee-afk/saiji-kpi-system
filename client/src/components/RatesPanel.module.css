@@ -1,0 +1,20 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+}
+.name { font-size: 0.82rem; font-weight: 700; color: var(--text-muted); }
+.rate { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+.detail { font-size: 0.72rem; color: var(--text-faint); }
+
+@media (min-width: 640px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}

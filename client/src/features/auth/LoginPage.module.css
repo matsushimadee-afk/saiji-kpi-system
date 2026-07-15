@@ -1,0 +1,68 @@
+.wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+  background: radial-gradient(1200px 600px at 50% -10%, color-mix(in srgb, var(--brand) 14%, var(--bg)), var(--bg));
+}
+.box {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.head {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+.mark {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--brand), #7c3aed);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.1rem;
+  box-shadow: var(--shadow-md);
+}
+.title { font-size: 1.4rem; }
+.sub { color: var(--text-muted); font-size: 0.9rem; }
+.error {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--danger);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+}
+.demo {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  line-height: 1.6;
+}
+.demo code {
+  background: var(--surface);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+.linkBtn {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  align-self: center;
+  padding: var(--space-2);
+}
+.linkBtn:hover { color: var(--text-muted); }

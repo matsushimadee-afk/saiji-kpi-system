@@ -1,0 +1,60 @@
+.page { display: flex; flex-direction: column; gap: var(--space-5); }
+.title { font-size: 1.4rem; font-weight: 800; }
+
+.subnav {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding: 4px;
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+}
+.subnavLink {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: background var(--transition), color var(--transition);
+}
+.subnavLink:hover { color: var(--text); }
+.subnavActive { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.sectionTitle { font-size: 1.05rem; font-weight: 700; }
+
+/* モーダル内フォームのグリッド */
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+.formGrid .full { grid-column: 1 / -1; }
+
+.rowActions { display: flex; gap: var(--space-2); justify-content: flex-end; }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+.tag--on { background: rgba(16, 185, 129, 0.14); color: var(--success); }
+.tag--off { background: rgba(239, 68, 68, 0.12); color: var(--danger); }
+
+.swatch { width: 14px; height: 14px; border-radius: 4px; display: inline-block; vertical-align: middle; }
+
+@media (max-width: 560px) {
+  .formGrid { grid-template-columns: 1fr; }
+}

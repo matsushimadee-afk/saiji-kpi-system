@@ -1,0 +1,8 @@
+# Caddy 設定（自動でHTTPS証明書を取得・更新）
+# ↓ あなたのドメインに置き換えてください（例: kpi-deedrive.duckdns.org）
+your-domain.example.com {
+	encode zstd gzip
+	# Node サーバー（フロント＋API＋WebSocket）へ転送。
+	# Caddy は WebSocket(/socket.io) のアップグレードも自動で通します。
+	reverse_proxy localhost:4000
+}

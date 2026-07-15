@@ -1,0 +1,19 @@
+# systemd サービス定義（VMの再起動時も自動起動・落ちても自動再起動）
+# 配置: /etc/systemd/system/kpi.service
+# ※ User と WorkingDirectory は実際の配置に合わせて変更してください。
+[Unit]
+Description=Saiji KPI System (Node)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/saiji-kpi-system/server
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+# .env は WorkingDirectory(server) 内の .env が自動で読まれます
+
+[Install]
+WantedBy=multi-user.target
