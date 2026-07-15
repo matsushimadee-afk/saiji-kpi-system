@@ -16,6 +16,8 @@ export function createApp() {
 
   app.use(cors({ origin: env.clientOrigins.length ? env.clientOrigins : true, credentials: true }));
   app.use(express.json());
+  // Google ログイン(redirectモード)の戻り(フォームPOST)を受け取るため
+  app.use(express.urlencoded({ extended: false }));
 
   // ヘルスチェック
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));

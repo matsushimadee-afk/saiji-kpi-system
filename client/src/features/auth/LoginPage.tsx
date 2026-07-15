@@ -101,6 +101,8 @@ export function LoginPage() {
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <GoogleOAuthProvider clientId={config.googleClientId}>
                 <GoogleLogin
+                  ux_mode="redirect"
+                  login_uri={`${window.location.origin}/api/auth/google/callback`}
                   onSuccess={(cred) => onGoogle(cred.credential)}
                   onError={() => setError('Googleログインに失敗しました')}
                   locale="ja"
