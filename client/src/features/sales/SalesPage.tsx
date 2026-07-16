@@ -6,7 +6,7 @@ import { getErrorMessage } from '@/api/client';
 import { Button, Spinner, useToast } from '@/components/ui';
 import { RatesPanel } from '@/components/RatesPanel';
 import { KpiButtonCard } from './KpiButtonCard';
-import { VenueSelector } from './VenueSelector';
+import { VenuePicker } from './VenuePicker';
 import { useMySummary } from './useMySummary';
 import styles from './SalesPage.module.css';
 
@@ -57,7 +57,7 @@ export function SalesPage() {
           <div className={styles.hello}>{user.displayName} さん</div>
           <div className={styles.date}>{dateLabel} の入力</div>
         </div>
-        <VenueSelector venues={venues} value={venueId} onChange={handleVenue} />
+        <VenuePicker venues={venues} value={venueId} onChange={handleVenue} />
       </div>
 
       {loading || !data ? (

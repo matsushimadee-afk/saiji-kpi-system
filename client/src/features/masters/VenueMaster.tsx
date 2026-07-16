@@ -1,8 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { Venue } from '@saiji/shared';
 import { venueApi } from '@/api/endpoints';
 import { getErrorMessage } from '@/api/client';
 import { Button, Field, Input, Modal, Select, Spinner, useToast } from '@/components/ui';
+import { matches } from '@/lib/search';
 import { useList } from './useList';
 import styles from './Masters.module.css';
 
@@ -16,6 +17,10 @@ export function VenueMaster() {
   const [editing, setEditing] = useState<Venue | 'new' | null>(null);
   const [draft, setDraft] = useState<Draft>(emptyDraft(0));
   const [saving, setSaving] = useState(false);
+  const [q, setQ] = useState('');
+
+  // 会場数が多くても探せるように絞り込み
+  const filtered = useMemo(() => items.filter((v) => matches(q, v.name, v.area)), [items, q]);
 
   const openNew = () => {
     setDraft(emptyDraft(items.length + 1));
@@ -56,8 +61,19 @@ export function VenueMaster() {
   return (
     <div className="stack" style={{ gap: 'var(--space-4)' }}>
       <div className={styles.toolbar}>
-        <div className={styles.sectionTitle}>会場マスタ</div>
-        <Button variant="primary" onClick={openNew}>＋ 会場追加</Button>
+        <div className={styles.sectionTitle}>
+          会場マスタ <span className="faint" style={{ fontSize: '0.78rem', fontWeight: 600 }}>（{filtered.length}/{items.length}件）</span>
+        </div>
+        <div className="row row-2">
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="会場名・エリアで絞り込む"
+            inputMode="search"
+            style={{ width: 220, height: 38 }}
+          />
+          <Button variant="primary" onClick={openNew}>＋ 会場追加</Button>
+        </div>
       </div>
 
       {loading ? (
@@ -75,7 +91,10 @@ export function VenueMaster() {
               </tr>
             </thead>
             <tbody>
-              {items.map((v) => (
+              {filtered.length === 0 && (
+                <tr><td colSpan={5} className="muted center" style={{ padding: 'var(--space-6)' }}>該当する会場がありません</td></tr>
+              )}
+              {filtered.map((v) => (
                 <tr key={v.id}>
                   <td className="tabular">{v.displayOrder}</td>
                   <td>{v.name}</td>
