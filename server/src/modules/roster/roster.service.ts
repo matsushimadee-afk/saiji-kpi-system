@@ -26,6 +26,19 @@ const CHANNEL_MAP: Record<string, ChannelMapping> = {
   開発者: { role: 'admin', useCatsaiDept: false },
 };
 
+/**
+ * 販路 + 種別 から権限を決定する。
+ * 催事販路の「リーダー」は、個人別数値の閲覧とマスタ編集ができる leader 権限にする。
+ */
+function resolveMapping(channel: string, type: string): ChannelMapping | null {
+  const base = CHANNEL_MAP[channel];
+  if (!base) return null;
+  if (channel === '催事' && type === 'リーダー') {
+    return { ...base, role: 'leader' };
+  }
+  return base;
+}
+
 const CATSAI_DEPT_NAME = '催事';
 
 export interface RosterPerson {
@@ -123,7 +136,7 @@ export async function syncRoster(): Promise<RosterSyncResult> {
     const retired = iRetired >= 0 ? (raw[iRetired] ?? '').trim().toUpperCase() === 'TRUE' : false;
 
     if (!name || !email) continue; // 空行スキップ
-    const mapping = CHANNEL_MAP[channel];
+    const mapping = resolveMapping(channel, type);
     if (!mapping) continue; // 取込対象外の販路
 
     result.fetchedRows++;
@@ -169,7 +182,8 @@ export async function syncRoster(): Promise<RosterSyncResult> {
     .first();
   if (catsaiManager) {
     await db()('users')
-      .where({ department_id: catsaiDeptId, role: 'sales', source: 'roster' })
+      .where({ department_id: catsaiDeptId, source: 'roster' })
+      .whereIn('role', ['sales', 'leader'])
       .update({ manager_id: catsaiManager.id });
   }
 

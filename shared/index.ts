@@ -12,13 +12,19 @@
 // ---------------------------------------------------------------------------
 
 /** システム権限 (ログインユーザーが持つ操作権限) */
-export type Role = 'sales' | 'manager' | 'admin';
+export type Role = 'sales' | 'leader' | 'manager' | 'admin';
 
 export const ROLE_LABELS: Record<Role, string> = {
   sales: '営業担当',
+  leader: 'リーダー',
   manager: '責任者',
   admin: '管理者',
 };
+
+/** ダッシュボード(集計)を閲覧できる権限 */
+export const DASHBOARD_ROLES: Role[] = ['leader', 'manager', 'admin'];
+/** マスタを編集できる権限 */
+export const MASTER_ROLES: Role[] = ['leader', 'manager', 'admin'];
 
 /** 在籍状態 */
 export type UserStatus = 'active' | 'inactive';
@@ -256,6 +262,8 @@ export interface RankingRow {
   counts: Record<string, number>;
   /** ランキング基準となる主要 KPI の件数 */
   primaryCount: number;
+  /** この対象（担当者・会場・部署）ごとの転換率 */
+  rates: RateResult[];
 }
 
 export interface HourlyPoint {

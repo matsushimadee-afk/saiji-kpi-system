@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { MASTER_ROLES } from '@saiji/shared';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { parse } from '../../utils/validate.js';
 import { authenticate } from '../../middleware/auth.js';
@@ -27,17 +28,17 @@ ratesRouter.get(
 );
 ratesRouter.post(
   '/',
-  authorize('admin'),
+  authorize(...MASTER_ROLES),
   asyncHandler(async (req, res) => res.status(201).json(await rates.createRateMetric(parse(createSchema, req.body)))),
 );
 ratesRouter.put(
   '/:id',
-  authorize('admin'),
+  authorize(...MASTER_ROLES),
   asyncHandler(async (req, res) => res.json(await rates.updateRateMetric(Number(req.params.id), parse(updateSchema, req.body)))),
 );
 ratesRouter.delete(
   '/:id',
-  authorize('admin'),
+  authorize(...MASTER_ROLES),
   asyncHandler(async (req, res) => {
     await rates.deleteRateMetric(Number(req.params.id));
     res.status(204).end();

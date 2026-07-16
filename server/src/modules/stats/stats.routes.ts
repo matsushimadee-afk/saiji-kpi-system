@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { DASHBOARD_ROLES } from '@saiji/shared';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { authenticate, requireUser } from '../../middleware/auth.js';
 import { authorize } from '../../middleware/authorize.js';
@@ -11,7 +12,7 @@ statsRouter.use(authenticate);
 // デイリーダッシュボード (責任者・管理者)
 statsRouter.get(
   '/daily',
-  authorize('manager', 'admin'),
+  authorize(...DASHBOARD_ROLES),
   asyncHandler(async (req, res) => {
     const me = requireUser(req);
     const date = typeof req.query.date === 'string' && isValidDate(req.query.date) ? req.query.date : todayDate();
@@ -22,7 +23,7 @@ statsRouter.get(
 // 当月ダッシュボード (責任者・管理者)
 statsRouter.get(
   '/monthly',
-  authorize('manager', 'admin'),
+  authorize(...DASHBOARD_ROLES),
   asyncHandler(async (req, res) => {
     const me = requireUser(req);
     const month = typeof req.query.month === 'string' && isValidMonth(req.query.month) ? req.query.month : currentMonth();

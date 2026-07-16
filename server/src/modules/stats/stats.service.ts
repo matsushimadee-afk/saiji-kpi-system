@@ -23,8 +23,9 @@ interface Scope {
 
 /** ログインユーザーから集計スコープを決定する */
 export function resolveScope(user: AuthUser): Scope {
-  if (user.role === 'manager') {
-    return { role: 'manager', departmentId: user.departmentId, departmentName: user.departmentName };
+  // 責任者・リーダーは自部署のみ
+  if (user.role === 'manager' || user.role === 'leader') {
+    return { role: user.role, departmentId: user.departmentId, departmentName: user.departmentName };
   }
   // admin は全体
   return { role: user.role, departmentId: null, departmentName: null };
@@ -94,18 +95,21 @@ async function computeTotals(
   });
 }
 
-/** (id, label, kpi_id, total) の行群を RankingRow[] に整形 */
+type RateRows = Awaited<ReturnType<typeof getActiveRateRows>>;
+
+/** (id, label, kpi_id, total) の行群を RankingRow[] に整形し、対象ごとの転換率も計算する */
 function assembleRanking(
   rows: Array<{ id: number | null; label: string | null; sublabel?: string | null; kpi_id: number; total: number }>,
   kpiById: Map<number, KpiRow>,
   primaryCode: string | null,
+  rateRows: RateRows,
 ): RankingRow[] {
   const map = new Map<number, RankingRow>();
   for (const r of rows) {
     const id = r.id ?? 0;
     let row = map.get(id);
     if (!row) {
-      row = { id, label: r.label ?? '(未設定)', sublabel: r.sublabel ?? null, counts: {}, primaryCount: 0 };
+      row = { id, label: r.label ?? '(未設定)', sublabel: r.sublabel ?? null, counts: {}, primaryCount: 0, rates: [] };
       map.set(id, row);
     }
     const kpi = kpiById.get(r.kpi_id);
@@ -114,11 +118,28 @@ function assembleRanking(
       if (kpi.code === primaryCode) row.primaryCount = Number(r.total);
     }
   }
+
+  const list = [...map.values()];
+  // 対象(担当者/会場/部署)ごとの転換率を、その対象のKPI件数から計算
+  for (const row of list) {
+    const countByKpiId = new Map<number, number>();
+    for (const [kpiId, kpi] of kpiById) {
+      countByKpiId.set(kpiId, row.counts[kpi.code] ?? 0);
+    }
+    row.rates = computeRates(rateRows, countByKpiId);
+  }
+
   const sumOf = (row: RankingRow) => Object.values(row.counts).reduce((a, b) => a + b, 0);
-  return [...map.values()].sort((a, b) => b.primaryCount - a.primaryCount || sumOf(b) - sumOf(a));
+  return list.sort((a, b) => b.primaryCount - a.primaryCount || sumOf(b) - sumOf(a));
 }
 
-async function userRanking(scope: Scope, applyDate: DateApplier, kpiById: Map<number, KpiRow>, primary: string | null) {
+async function userRanking(
+  scope: Scope,
+  applyDate: DateApplier,
+  kpiById: Map<number, KpiRow>,
+  primary: string | null,
+  rateRows: RateRows,
+) {
   const rows = await scopedEntries(scope, applyDate)
     .leftJoin('users', 'kpi_entries.user_id', 'users.id')
     .groupBy('kpi_entries.user_id', 'users.display_name', 'kpi_entries.kpi_id')
@@ -128,10 +149,16 @@ async function userRanking(scope: Scope, applyDate: DateApplier, kpiById: Map<nu
       'kpi_entries.kpi_id as kpi_id',
     )
     .sum({ total: 'amount' });
-  return assembleRanking(rows as any, kpiById, primary);
+  return assembleRanking(rows as any, kpiById, primary, rateRows);
 }
 
-async function venueRanking(scope: Scope, applyDate: DateApplier, kpiById: Map<number, KpiRow>, primary: string | null) {
+async function venueRanking(
+  scope: Scope,
+  applyDate: DateApplier,
+  kpiById: Map<number, KpiRow>,
+  primary: string | null,
+  rateRows: RateRows,
+) {
   const rows = await scopedEntries(scope, applyDate)
     .leftJoin('venues', 'kpi_entries.venue_id', 'venues.id')
     .groupBy('kpi_entries.venue_id', 'venues.name', 'venues.area', 'kpi_entries.kpi_id')
@@ -142,10 +169,16 @@ async function venueRanking(scope: Scope, applyDate: DateApplier, kpiById: Map<n
       'kpi_entries.kpi_id as kpi_id',
     )
     .sum({ total: 'amount' });
-  return assembleRanking(rows as any, kpiById, primary);
+  return assembleRanking(rows as any, kpiById, primary, rateRows);
 }
 
-async function departmentRanking(scope: Scope, applyDate: DateApplier, kpiById: Map<number, KpiRow>, primary: string | null) {
+async function departmentRanking(
+  scope: Scope,
+  applyDate: DateApplier,
+  kpiById: Map<number, KpiRow>,
+  primary: string | null,
+  rateRows: RateRows,
+) {
   const rows = await scopedEntries(scope, applyDate)
     .leftJoin('departments', 'kpi_entries.department_id', 'departments.id')
     .groupBy('kpi_entries.department_id', 'departments.name', 'kpi_entries.kpi_id')
@@ -155,7 +188,7 @@ async function departmentRanking(scope: Scope, applyDate: DateApplier, kpiById: 
       'kpi_entries.kpi_id as kpi_id',
     )
     .sum({ total: 'amount' });
-  return assembleRanking(rows as any, kpiById, primary);
+  return assembleRanking(rows as any, kpiById, primary, rateRows);
 }
 
 /** 時間帯別推移 (ローカル時刻でバケット化) */
@@ -202,17 +235,18 @@ export async function getDailyStats(user: AuthUser, date: string): Promise<Daily
   const kpiById = new Map(kpis.map((k) => [k.id, k]));
   const primary = kpis.length ? kpis[kpis.length - 1].code : null;
   const applyDate: DateApplier = (q) => q.where('kpi_entries.entry_date', date);
+  const rateRows = await getActiveRateRows();
 
   const [totals, users, venues, departments, hourly] = await Promise.all([
     computeTotals(scope, applyDate, kpis, 'daily'),
-    userRanking(scope, applyDate, kpiById, primary),
-    venueRanking(scope, applyDate, kpiById, primary),
-    departmentRanking(scope, applyDate, kpiById, primary),
+    userRanking(scope, applyDate, kpiById, primary, rateRows),
+    venueRanking(scope, applyDate, kpiById, primary, rateRows),
+    departmentRanking(scope, applyDate, kpiById, primary, rateRows),
     hourlyTrend(scope, applyDate, kpis),
   ]);
 
   const countByKpiId = new Map(totals.map((t) => [t.kpiId, t.count]));
-  const rates = computeRates(await getActiveRateRows(), countByKpiId);
+  const rates = computeRates(rateRows, countByKpiId);
 
   return {
     date,
@@ -237,15 +271,16 @@ export async function getMonthlyStats(user: AuthUser, month: string): Promise<Mo
   const applyDate: DateApplier = (q) =>
     q.where('kpi_entries.entry_date', '>=', start).where('kpi_entries.entry_date', '<', endExclusive);
 
+  const rateRows = await getActiveRateRows();
   const [totals, users, venues, departments] = await Promise.all([
     computeTotals(scope, applyDate, kpis, 'monthly'),
-    userRanking(scope, applyDate, kpiById, primary),
-    venueRanking(scope, applyDate, kpiById, primary),
-    departmentRanking(scope, applyDate, kpiById, primary),
+    userRanking(scope, applyDate, kpiById, primary, rateRows),
+    venueRanking(scope, applyDate, kpiById, primary, rateRows),
+    departmentRanking(scope, applyDate, kpiById, primary, rateRows),
   ]);
 
   const countByKpiId = new Map(totals.map((t) => [t.kpiId, t.count]));
-  const rates = computeRates(await getActiveRateRows(), countByKpiId);
+  const rates = computeRates(rateRows, countByKpiId);
 
   return {
     month,

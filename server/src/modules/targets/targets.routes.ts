@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { MASTER_ROLES } from '@saiji/shared';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { parse } from '../../utils/validate.js';
 import { authenticate } from '../../middleware/auth.js';
@@ -23,7 +24,7 @@ targetsRouter.use(authenticate);
 // 一覧 (責任者・管理者が閲覧可)
 targetsRouter.get(
   '/',
-  authorize('manager', 'admin'),
+  authorize(...MASTER_ROLES),
   asyncHandler(async (req, res) => {
     const filter: targets.TargetFilter = {};
     if (req.query.periodType) filter.periodType = req.query.periodType as any;
@@ -35,13 +36,13 @@ targetsRouter.get(
 // 目標の設定 (管理者のみ)
 targetsRouter.post(
   '/',
-  authorize('admin'),
+  authorize(...MASTER_ROLES),
   asyncHandler(async (req, res) => res.status(201).json(await targets.upsertTarget(parse(upsertSchema, req.body)))),
 );
 
 targetsRouter.delete(
   '/:id',
-  authorize('admin'),
+  authorize(...MASTER_ROLES),
   asyncHandler(async (req, res) => {
     await targets.deleteTarget(Number(req.params.id));
     res.status(204).end();

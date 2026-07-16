@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 export function defaultRouteForRole(role: Role): string {
   switch (role) {
     case 'sales':
+    case 'leader': // リーダーも現場入力するため入力画面から
       return '/sales';
     case 'manager':
     case 'admin':

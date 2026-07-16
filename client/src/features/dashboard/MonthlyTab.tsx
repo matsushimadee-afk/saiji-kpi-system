@@ -2,6 +2,7 @@ import { statsApi } from '@/api/endpoints';
 import { Spinner } from '@/components/ui';
 import { RatesPanel } from '@/components/RatesPanel';
 import { KpiTotalsGrid } from './KpiTotalsGrid';
+import { UserRatesTable } from './UserRatesTable';
 import { RankingCard } from './RankingCard';
 import { useLiveStats } from './useLiveStats';
 import styles from './Dashboard.module.css';
@@ -17,7 +18,8 @@ export function MonthlyTab({ month }: { month: string }) {
   return (
     <div className="stack" style={{ gap: 'var(--space-5)' }}>
       <KpiTotalsGrid totals={data.totals} />
-      <RatesPanel rates={data.rates} />
+      <RatesPanel rates={data.rates} title="転換率（全体）" />
+      <UserRatesTable rows={data.userRanking} />
       <div className={styles.columns}>
         <RankingCard title="営業ランキング" rows={data.userRanking} kpis={kpis} primaryKpiCode={data.primaryKpiCode} />
         <RankingCard title="会場ランキング" rows={data.venueRanking} kpis={kpis} primaryKpiCode={data.primaryKpiCode} />

@@ -241,6 +241,7 @@ export function UserMaster() {
           <Field label="権限">
             <Select value={draft.role} onChange={(e) => setDraft({ ...draft, role: e.target.value as Role })}>
               <option value="sales">営業担当</option>
+              <option value="leader">リーダー</option>
               <option value="manager">責任者</option>
               <option value="admin">管理者</option>
             </Select>

@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { DASHBOARD_ROLES, MASTER_ROLES } from '@saiji/shared';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { RoleGate } from '@/components/auth/RoleGate';
 import { AppShell } from '@/components/layout/AppShell';
@@ -25,15 +26,15 @@ export const router = createBrowserRouter([
           // 入力: 全ロール
           { path: '/sales', element: <SalesPage /> },
 
-          // ダッシュボード: 責任者・管理者
+          // ダッシュボード: リーダー・責任者・管理者
           {
-            element: <RoleGate allow={['manager', 'admin']} />,
+            element: <RoleGate allow={DASHBOARD_ROLES} />,
             children: [{ path: '/dashboard', element: <DashboardPage /> }],
           },
 
-          // マスタ管理: 管理者のみ
+          // マスタ管理: リーダー・責任者・管理者
           {
-            element: <RoleGate allow={['admin']} />,
+            element: <RoleGate allow={MASTER_ROLES} />,
             children: [
               {
                 path: '/masters',
@@ -46,7 +47,11 @@ export const router = createBrowserRouter([
                   { path: 'venues', element: <VenueMaster /> },
                   { path: 'org', element: <OrgMaster /> },
                   { path: 'targets', element: <TargetMaster /> },
-                  { path: 'data', element: <DataManagement /> },
+                  // データリセットは取り返しがつかないため管理者のみ
+                  {
+                    element: <RoleGate allow={['admin']} />,
+                    children: [{ path: 'data', element: <DataManagement /> }],
+                  },
                 ],
               },
             ],

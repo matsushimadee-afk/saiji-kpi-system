@@ -29,7 +29,8 @@ async function main() {
   await knex.migrate.latest();
 
   const kpis = await knex('kpis').where('is_active', true);
-  const salesUsers = await knex('users').where({ role: 'sales', status: 'active' });
+  // 現場で入力するのは 営業担当 と リーダー
+  const salesUsers = await knex('users').where({ status: 'active' }).whereIn('role', ['sales', 'leader']);
   const venues = await knex('venues').where('status', 'active');
 
   if (salesUsers.length === 0) {

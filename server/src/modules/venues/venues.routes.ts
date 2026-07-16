@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { MASTER_ROLES } from '@saiji/shared';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { parse } from '../../utils/validate.js';
 import { authenticate } from '../../middleware/auth.js';
@@ -26,17 +27,17 @@ venuesRouter.get(
 );
 venuesRouter.post(
   '/',
-  authorize('admin'),
+  authorize(...MASTER_ROLES),
   asyncHandler(async (req, res) => res.status(201).json(await venues.createVenue(parse(createSchema, req.body)))),
 );
 venuesRouter.put(
   '/:id',
-  authorize('admin'),
+  authorize(...MASTER_ROLES),
   asyncHandler(async (req, res) => res.json(await venues.updateVenue(Number(req.params.id), parse(updateSchema, req.body)))),
 );
 venuesRouter.delete(
   '/:id',
-  authorize('admin'),
+  authorize(...MASTER_ROLES),
   asyncHandler(async (req, res) => {
     await venues.deleteVenue(Number(req.params.id));
     res.status(204).end();
