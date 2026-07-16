@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { parse } from '../../utils/validate.js';
 import { authenticate, requireUser } from '../../middleware/auth.js';
-import { todayDate, isValidDate } from '../../utils/datetime.js';
+import { authorize } from '../../middleware/authorize.js';
+import { todayDate, isValidDate, currentMonth } from '../../utils/datetime.js';
 import { emitKpiUpdate } from '../../realtime/socket.js';
 import * as entries from './entries.service.js';
 
@@ -45,5 +46,26 @@ entriesRouter.get(
     const me = requireUser(req);
     const date = typeof req.query.date === 'string' && isValidDate(req.query.date) ? req.query.date : todayDate();
     res.json(await entries.getMySummary(me, date));
+  }),
+);
+
+// 全カウントをリセット (管理者のみ・本運用前のテストデータ削除用)
+entriesRouter.post(
+  '/reset',
+  authorize('admin'),
+  asyncHandler(async (_req, res) => {
+    const deleted = await entries.resetAllEntries();
+    // 開いているダッシュボードを更新させる
+    emitKpiUpdate({
+      type: 'undone',
+      entryId: 0,
+      userId: 0,
+      kpiId: 0,
+      venueId: null,
+      departmentId: null,
+      entryDate: todayDate(),
+      month: currentMonth(),
+    });
+    res.json({ deleted });
   }),
 );

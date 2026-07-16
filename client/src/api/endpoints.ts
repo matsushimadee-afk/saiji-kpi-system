@@ -42,6 +42,7 @@ export const entriesApi = {
   undo: () => api.post('/entries/undo').then((r) => r.data),
   mySummary: (date?: string) =>
     api.get<MySummaryResponse>('/entries/summary/me', { params: { date } }).then((r) => r.data),
+  reset: () => api.post<{ deleted: number }>('/entries/reset').then((r) => r.data),
 };
 
 // ---------------- 集計 ----------------

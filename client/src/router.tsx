@@ -12,6 +12,7 @@ import { RateMaster } from '@/features/masters/RateMaster';
 import { VenueMaster } from '@/features/masters/VenueMaster';
 import { OrgMaster } from '@/features/masters/OrgMaster';
 import { TargetMaster } from '@/features/masters/TargetMaster';
+import { DataManagement } from '@/features/masters/DataManagement';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
                   { path: 'venues', element: <VenueMaster /> },
                   { path: 'org', element: <OrgMaster /> },
                   { path: 'targets', element: <TargetMaster /> },
+                  { path: 'data', element: <DataManagement /> },
                 ],
               },
             ],

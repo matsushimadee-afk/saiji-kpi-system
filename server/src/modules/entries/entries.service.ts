@@ -77,6 +77,12 @@ export async function undoLast(user: AuthUser): Promise<CreatedEntry> {
   return { entryId: last.id, payload };
 }
 
+/** 全入力データ(カウント)を削除する。本運用前のテストデータ削除用。 */
+export async function resetAllEntries(): Promise<number> {
+  const deleted = await db()('kpi_entries').del();
+  return Number(deleted);
+}
+
 /** 営業担当画面のサマリ (KPI ごとの件数・目標・達成率) */
 export async function getMySummary(user: AuthUser, date: string): Promise<MySummaryResponse> {
   const kpis = await db()('kpis').where('is_active', true).orderBy('display_order').orderBy('id');

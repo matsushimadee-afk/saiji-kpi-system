@@ -9,6 +9,7 @@ const SUB_NAV = [
   { to: 'venues', label: '会場' },
   { to: 'org', label: '部署・チーム' },
   { to: 'targets', label: '目標' },
+  { to: 'data', label: 'データ管理' },
 ];
 
 export function MastersLayout() {
