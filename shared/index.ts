@@ -66,6 +66,8 @@ export interface Kpi {
   /** プログラム上の安定キー (例: call / seat / negotiation / contract)。集計や連携で利用 */
   code: string;
   name: string;
+  /** 説明（押すタイミング）。アプリ内の使い方ガイドに表示される */
+  description: string | null;
   displayOrder: number;
   isActive: boolean;
   /** UI 上のアクセントカラー (任意) */

@@ -10,6 +10,7 @@ import * as kpis from './kpis.service.js';
 const createSchema = z.object({
   code: z.string().min(1).regex(/^[a-z0-9_]+$/i, '英数字とアンダースコアのみ使用できます'),
   name: z.string().min(1),
+  description: z.string().nullable().optional(),
   displayOrder: z.number().int().optional(),
   isActive: z.boolean().optional(),
   color: z.string().nullable().optional(),

@@ -5,6 +5,7 @@ import { RoleGate } from '@/components/auth/RoleGate';
 import { AppShell } from '@/components/layout/AppShell';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { SalesPage } from '@/features/sales/SalesPage';
+import { HelpPage } from '@/features/help/HelpPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { MastersLayout } from '@/features/masters/MastersLayout';
 import { UserMaster } from '@/features/masters/UserMaster';
@@ -25,6 +26,9 @@ export const router = createBrowserRouter([
         children: [
           // 入力: 全ロール
           { path: '/sales', element: <SalesPage /> },
+
+          // 使い方ガイド: 全ロール
+          { path: '/help', element: <HelpPage /> },
 
           // ダッシュボード: リーダー・責任者・管理者
           {

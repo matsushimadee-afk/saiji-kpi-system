@@ -9,6 +9,7 @@ import styles from './Masters.module.css';
 type Draft = {
   code: string;
   name: string;
+  description: string;
   displayOrder: number;
   color: string;
   isActive: boolean;
@@ -17,6 +18,7 @@ type Draft = {
 const emptyDraft = (order: number): Draft => ({
   code: '',
   name: '',
+  description: '',
   displayOrder: order,
   color: '#3B82F6',
   isActive: true,
@@ -34,15 +36,23 @@ export function KpiMaster() {
     setEditing('new');
   };
   const openEdit = (k: Kpi) => {
-    setDraft({ code: k.code, name: k.name, displayOrder: k.displayOrder, color: k.color ?? '#3B82F6', isActive: k.isActive });
+    setDraft({
+      code: k.code,
+      name: k.name,
+      description: k.description ?? '',
+      displayOrder: k.displayOrder,
+      color: k.color ?? '#3B82F6',
+      isActive: k.isActive,
+    });
     setEditing(k);
   };
 
   const save = async () => {
     setSaving(true);
     try {
-      if (editing === 'new') await kpiApi.create(draft);
-      else if (editing) await kpiApi.update(editing.id, draft);
+      const payload = { ...draft, description: draft.description || null };
+      if (editing === 'new') await kpiApi.create(payload);
+      else if (editing) await kpiApi.update(editing.id, payload);
       toast.success('保存しました');
       setEditing(null);
       await reload();
@@ -130,6 +140,14 @@ export function KpiMaster() {
           </Field>
           <Field label="コード (英数字)">
             <Input value={draft.code} onChange={(e) => setDraft({ ...draft, code: e.target.value })} placeholder="例: call" />
+          </Field>
+          <Field label="説明（押すタイミング）">
+            <Input
+              value={draft.description}
+              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              placeholder="例: お客様に声をかけたとき"
+              className="full"
+            />
           </Field>
           <Field label="表示順">
             <Input type="number" value={draft.displayOrder} onChange={(e) => setDraft({ ...draft, displayOrder: Number(e.target.value) })} />

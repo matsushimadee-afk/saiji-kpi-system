@@ -13,6 +13,7 @@ export async function listKpis(includeInactive = true): Promise<Kpi[]> {
 export async function createKpi(input: {
   code: string;
   name: string;
+  description?: string | null;
   displayOrder?: number;
   isActive?: boolean;
   color?: string | null;
@@ -23,6 +24,7 @@ export async function createKpi(input: {
     db()('kpis').insert({
       code: input.code,
       name: input.name,
+      description: input.description ?? null,
       display_order: input.displayOrder ?? 0,
       is_active: input.isActive ?? true,
       color: input.color ?? null,
@@ -33,11 +35,12 @@ export async function createKpi(input: {
 
 export async function updateKpi(
   id: number,
-  input: Partial<{ code: string; name: string; displayOrder: number; isActive: boolean; color: string | null }>,
+  input: Partial<{ code: string; name: string; description: string | null; displayOrder: number; isActive: boolean; color: string | null }>,
 ): Promise<Kpi> {
   const patch: Record<string, unknown> = { updated_at: db().fn.now() };
   if (input.code !== undefined) patch.code = input.code;
   if (input.name !== undefined) patch.name = input.name;
+  if (input.description !== undefined) patch.description = input.description;
   if (input.displayOrder !== undefined) patch.display_order = input.displayOrder;
   if (input.isActive !== undefined) patch.is_active = input.isActive;
   if (input.color !== undefined) patch.color = input.color;

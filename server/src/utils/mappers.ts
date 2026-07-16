@@ -33,6 +33,7 @@ export function mapKpi(r: any): Kpi {
     id: r.id,
     code: r.code,
     name: r.name,
+    description: r.description ?? null,
     displayOrder: r.display_order,
     isActive: toBool(r.is_active),
     color: r.color ?? null,

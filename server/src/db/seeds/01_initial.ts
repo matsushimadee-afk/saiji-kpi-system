@@ -28,13 +28,13 @@ export async function seed(knex: Knex): Promise<void> {
 
   // --- KPIマスタ（カウンター項目）---
   await knex('kpis').insert([
-    { code: 'catch', name: 'キャッチ数', display_order: 1, is_active: true, color: '#3B82F6' },
-    { code: 'power_hearing', name: '電力会社ヒアリング数(シール)', display_order: 2, is_active: true, color: '#06B6D4' },
-    { code: 'lottery', name: '抽選数', display_order: 3, is_active: true, color: '#8B5CF6' },
-    { code: 'survey', name: 'アンケート数', display_order: 4, is_active: true, color: '#EC4899' },
-    { code: 'negotiation', name: '商談数(着座)', display_order: 5, is_active: true, color: '#F59E0B' },
-    { code: 'company_intro', name: '会社案内突破数', display_order: 6, is_active: true, color: '#F97316' },
-    { code: 'order', name: '受注数', display_order: 7, is_active: true, color: '#10B981' },
+    { code: 'catch', name: 'キャッチ数', description: 'お客様に声をかけたとき', display_order: 1, is_active: true, color: '#3B82F6' },
+    { code: 'power_hearing', name: '電力会社ヒアリング数(シール)', description: '電力会社を聞けた／シールを貼れたとき', display_order: 2, is_active: true, color: '#06B6D4' },
+    { code: 'lottery', name: '抽選数', description: '抽選をしてもらえたとき', display_order: 3, is_active: true, color: '#8B5CF6' },
+    { code: 'survey', name: 'アンケート数', description: 'アンケートを書いてもらえたとき', display_order: 4, is_active: true, color: '#EC4899' },
+    { code: 'negotiation', name: '商談数(着座)', description: '座って商談ができたとき', display_order: 5, is_active: true, color: '#F59E0B' },
+    { code: 'company_intro', name: '会社案内突破数', description: '会社案内を突破できたとき', display_order: 6, is_active: true, color: '#F97316' },
+    { code: 'order', name: '受注数', description: '受注できたとき', display_order: 7, is_active: true, color: '#10B981' },
   ]);
 
   // KPI の id を code から引くマップ

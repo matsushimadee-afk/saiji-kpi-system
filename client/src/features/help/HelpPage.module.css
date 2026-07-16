@@ -1,0 +1,81 @@
+.page { display: flex; flex-direction: column; gap: var(--space-5); }
+.title { font-size: 1.4rem; font-weight: 800; }
+.lead { color: var(--text-muted); font-size: 0.88rem; margin-top: 2px; }
+
+/* 手順 */
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  counter-reset: step;
+}
+.steps li { position: relative; padding-left: 38px; }
+.steps li::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.stepTitle { font-weight: 700; font-size: 0.98rem; }
+.stepBody { margin: 2px 0 0; color: var(--text-muted); font-size: 0.87rem; line-height: 1.7; }
+
+/* KPI一覧 */
+.kpiList { display: flex; flex-direction: column; }
+.kpiRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border);
+}
+.kpiRow:first-child { border-top: none; }
+.kpiIdx {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #fff;
+  margin-top: 2px;
+}
+.kpiName { font-weight: 700; }
+.kpiDesc { color: var(--text-muted); font-size: 0.85rem; }
+
+/* Q&A */
+.qaItem { border-top: 1px solid var(--border); padding: var(--space-3) 0; }
+.qaItem:first-child { border-top: none; }
+.qaItem summary { cursor: pointer; font-weight: 700; font-size: 0.92rem; }
+.qaItem p { color: var(--text-muted); font-size: 0.86rem; margin: var(--space-2) 0 0; line-height: 1.7; }
+
+.tip {
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+.key {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-weight: 700;
+  font-size: 0.85em;
+  color: var(--text);
+}
