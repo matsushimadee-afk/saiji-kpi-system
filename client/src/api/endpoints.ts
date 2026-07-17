@@ -42,7 +42,9 @@ export const entriesApi = {
   undo: () => api.post('/entries/undo').then((r) => r.data),
   mySummary: (date?: string) =>
     api.get<MySummaryResponse>('/entries/summary/me', { params: { date } }).then((r) => r.data),
-  reset: () => api.post<{ deleted: number }>('/entries/reset').then((r) => r.data),
+  /** before(YYYY-MM-DD) を渡すとその日より前だけ削除。未指定なら全期間 */
+  reset: (before?: string) =>
+    api.post<{ deleted: number }>('/entries/reset', before ? { before } : {}).then((r) => r.data),
 };
 
 // ---------------- 集計 ----------------

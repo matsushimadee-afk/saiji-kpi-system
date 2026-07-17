@@ -13,6 +13,11 @@ const createSchema = z.object({
   venueId: z.number().int().nullable().optional(),
 });
 
+const resetSchema = z.object({
+  /** この日より前を削除 (YYYY-MM-DD)。未指定なら全期間 */
+  before: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+
 export const entriesRouter = Router();
 entriesRouter.use(authenticate);
 
@@ -49,12 +54,14 @@ entriesRouter.get(
   }),
 );
 
-// 全カウントをリセット (管理者のみ・本運用前のテストデータ削除用)
+// カウントをリセット (管理者のみ)
+// body.before を指定すると「その日より前」だけ削除（当日の入力は残る）
 entriesRouter.post(
   '/reset',
   authorize('admin'),
-  asyncHandler(async (_req, res) => {
-    const deleted = await entries.resetAllEntries();
+  asyncHandler(async (req, res) => {
+    const { before } = parse(resetSchema, req.body ?? {});
+    const deleted = await entries.resetEntries(before);
     // 開いているダッシュボードを更新させる
     emitKpiUpdate({
       type: 'undone',

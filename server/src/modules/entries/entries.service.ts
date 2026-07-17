@@ -2,7 +2,7 @@ import type { AuthUser, KpiUpdatePayload, MySummaryResponse } from '@saiji/share
 import { db } from '../../config/database.js';
 import { AppError } from '../../utils/AppError.js';
 import { insertId } from '../../utils/db.js';
-import { todayDate, nowTimestamp } from '../../utils/datetime.js';
+import { todayDate, nowIso } from '../../utils/datetime.js';
 import { buildTargetIndex, resolveTarget, type ScopeRef } from '../targets/targets.service.js';
 import { computeRates, getActiveRateRows } from '../rates/rates.service.js';
 
@@ -34,7 +34,7 @@ export async function createEntry(
       amount: 1,
       entry_date: entryDate,
       is_active: true,
-      created_at: nowTimestamp(),
+      created_at: nowIso(),
     }),
   );
 
@@ -77,9 +77,15 @@ export async function undoLast(user: AuthUser): Promise<CreatedEntry> {
   return { entryId: last.id, payload };
 }
 
-/** 全入力データ(カウント)を削除する。本運用前のテストデータ削除用。 */
-export async function resetAllEntries(): Promise<number> {
-  const deleted = await db()('kpi_entries').del();
+/**
+ * 入力データ(カウント)を削除する。
+ * @param before YYYY-MM-DD。指定するとその日より前だけ削除（当日分は残る）。
+ *               未指定なら全期間を削除。
+ */
+export async function resetEntries(before?: string): Promise<number> {
+  const q = db()('kpi_entries');
+  if (before) q.where('entry_date', '<', before);
+  const deleted = await q.del();
   return Number(deleted);
 }
 

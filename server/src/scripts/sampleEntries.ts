@@ -136,7 +136,8 @@ async function main() {
               amount: 1,
               entry_date: date,
               is_active: true,
-              created_at: `${date} ${pad(HOURS[hIdx])}:${pad(minute)}:00`,
+              // 日本時間の「その時刻」を、正しい瞬間(UTC ISO)として保存する
+              created_at: new Date(`${date}T${pad(HOURS[hIdx])}:${pad(minute)}:00+09:00`).toISOString(),
             });
           }
         });

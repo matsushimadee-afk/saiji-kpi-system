@@ -2,25 +2,41 @@ import { useState } from 'react';
 import { entriesApi } from '@/api/endpoints';
 import { getErrorMessage } from '@/api/client';
 import { Button, Card, Field, Input, Modal, useToast } from '@/components/ui';
+import { todayStr } from '@/lib/format';
 import styles from './Masters.module.css';
 
 const CONFIRM_WORD = 'リセット';
 
+/** 'beforeToday' = 本日より前だけ削除 / 'all' = 全期間削除 */
+type Mode = 'beforeToday' | 'all';
+
+const MODE_INFO: Record<Mode, { title: string; warn: string }> = {
+  beforeToday: {
+    title: '昨日までのデータを削除',
+    warn: '本日より前の入力をすべて削除します。本日の入力は残ります。',
+  },
+  all: {
+    title: '全期間のデータを削除',
+    warn: '本日の入力も含めて、すべての入力を削除します。',
+  },
+};
+
 export function DataManagement() {
   const toast = useToast();
-  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<Mode | null>(null);
   const [confirmText, setConfirmText] = useState('');
   const [busy, setBusy] = useState(false);
 
   const close = () => {
-    setOpen(false);
+    setMode(null);
     setConfirmText('');
   };
 
   const doReset = async () => {
+    if (!mode) return;
     setBusy(true);
     try {
-      const r = await entriesApi.reset();
+      const r = await entriesApi.reset(mode === 'beforeToday' ? todayStr() : undefined);
       toast.success(`入力データ ${r.deleted.toLocaleString('ja-JP')} 件を削除しました`);
       close();
     } catch (err) {
@@ -37,9 +53,9 @@ export function DataManagement() {
       <Card title="カウントのリセット">
         <div className="stack" style={{ gap: 'var(--space-4)' }}>
           <p className="muted" style={{ margin: 0, lineHeight: 1.7 }}>
-            これまでの<strong>入力データ（全KPIのカウント）をすべて削除</strong>します。
-            本運用を始める前に、テスト入力を消してゼロから始めたいときに使います。
+            入力データ（KPIのカウント）を削除します。テストデータの整理や、本運用の開始時に使います。
           </p>
+
           <div
             style={{
               background: 'rgba(239, 68, 68, 0.1)',
@@ -52,19 +68,27 @@ export function DataManagement() {
             }}
           >
             ⚠️ 削除したデータは元に戻せません。<br />
-            ※ KPI・転換率・会場・担当者・目標などの<strong>マスタ設定は消えません</strong>（入力カウントだけを削除します）。
+            ※ KPI・転換率・会場・担当者・目標などの<strong>マスタ設定は消えません</strong>。
           </div>
-          <div>
-            <Button variant="danger" onClick={() => setOpen(true)}>
-              全カウントをリセット
+
+          <div className="row row-3 wrap">
+            <Button variant="ghost" onClick={() => setMode('beforeToday')}>
+              🗓 昨日までを削除（本日分は残す）
+            </Button>
+            <Button variant="danger" onClick={() => setMode('all')}>
+              全期間を削除
             </Button>
           </div>
+          <p className="faint" style={{ margin: 0, fontSize: '0.8rem', lineHeight: 1.7 }}>
+            すでに稼働を始めた後にテストデータを消したいときは、
+            <b>「昨日までを削除」</b>を使うと本日の入力を守れます。
+          </p>
         </div>
       </Card>
 
       <Modal
-        open={open}
-        title="全カウントをリセット"
+        open={mode !== null}
+        title={mode ? MODE_INFO[mode].title : ''}
         onClose={close}
         footer={
           <>
@@ -77,13 +101,14 @@ export function DataManagement() {
               onClick={doReset}
               disabled={busy || confirmText.trim() !== CONFIRM_WORD}
             >
-              {busy ? '削除中…' : 'リセットを実行'}
+              {busy ? '削除中…' : '削除を実行'}
             </Button>
           </>
         }
       >
         <p style={{ margin: 0, lineHeight: 1.7 }}>
-          本当にすべての入力データを削除しますか？<br />
+          {mode && MODE_INFO[mode].warn}
+          <br />
           <span className="muted">この操作は取り消せません。</span>
         </p>
         <Field label={`確認のため「${CONFIRM_WORD}」と入力してください`}>
@@ -91,7 +116,6 @@ export function DataManagement() {
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder={CONFIRM_WORD}
-            autoFocus
           />
         </Field>
       </Modal>
