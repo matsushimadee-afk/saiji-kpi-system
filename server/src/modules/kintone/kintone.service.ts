@@ -15,8 +15,8 @@ const KPI_TO_KINTONE_LABEL: Record<string, string> = {
   power_hearing: '電力会社ヒアリング数',
   lottery: '抽選件数',
   survey: 'アンケート数',
-  negotiation: '商談数(着席)',
-  talk: '商談数(着席なし)',
+  negotiation: '商談数(着座)',
+  talk: '商談(着座なし)',
   company_intro: '会社案内アウト',
   order: '受注数',
 };

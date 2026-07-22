@@ -24,8 +24,15 @@ services:
       # 自動生成される署名鍵
       - key: JWT_SECRET
         generateValue: true
-      # 作成時に入力（Neonの接続文字列 / GoogleクライアントID）
+      # キントーン日報連携（トークン未設定なら連携ボタンは出ない）
+      - key: KINTONE_SUBDOMAIN
+        value: deedrive
+      - key: KINTONE_APP_ID
+        value: "462"
+      # 作成時に入力（Neonの接続文字列 / GoogleクライアントID / キントーンAPIトークン）
       - key: DATABASE_URL
         sync: false
       - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: KINTONE_API_TOKEN
         sync: false

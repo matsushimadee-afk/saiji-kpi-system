@@ -33,7 +33,7 @@ export async function seed(knex: Knex): Promise<void> {
     { code: 'lottery', name: '抽選数', description: '抽選をしてもらえたとき', display_order: 3, is_active: true, color: '#8B5CF6' },
     { code: 'survey', name: 'アンケート数', description: 'アンケートを書いてもらえたとき', display_order: 4, is_active: true, color: '#EC4899' },
     { code: 'negotiation', name: '商談数(着座)', description: '座って商談ができたとき', display_order: 5, is_active: true, color: '#F59E0B' },
-    { code: 'company_intro', name: '会社案内突破数', description: '会社案内を突破できたとき', display_order: 6, is_active: true, color: '#F97316' },
+    { code: 'company_intro', name: '会社案内アウト', description: '会社案内を突破できたとき', display_order: 6, is_active: true, color: '#F97316' },
     { code: 'order', name: '受注数', description: '受注できたとき', display_order: 7, is_active: true, color: '#10B981' },
   ]);
 
@@ -51,7 +51,7 @@ export async function seed(knex: Knex): Promise<void> {
     { name: '抽選率', numerator_kpi_id: kpiId('lottery'), denominator_kpi_id: kpiId('power_hearing'), display_order: 2, is_active: true },
     { name: 'アンケート率', numerator_kpi_id: kpiId('survey'), denominator_kpi_id: kpiId('lottery'), display_order: 3, is_active: true },
     { name: '商談率', numerator_kpi_id: kpiId('negotiation'), denominator_kpi_id: kpiId('survey'), display_order: 4, is_active: true },
-    { name: '会社案内突破率', numerator_kpi_id: kpiId('company_intro'), denominator_kpi_id: kpiId('negotiation'), display_order: 5, is_active: true },
+    { name: '会社案内アウト率', numerator_kpi_id: kpiId('company_intro'), denominator_kpi_id: kpiId('negotiation'), display_order: 5, is_active: true },
     { name: '受注率', numerator_kpi_id: kpiId('order'), denominator_kpi_id: kpiId('negotiation'), display_order: 6, is_active: true },
   ]);
 
