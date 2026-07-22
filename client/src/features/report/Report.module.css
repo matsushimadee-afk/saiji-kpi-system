@@ -1,0 +1,38 @@
+.page { display: flex; flex-direction: column; gap: var(--space-5); }
+.header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.title { font-size: 1.4rem; font-weight: 800; }
+.scope { color: var(--text-muted); font-size: 0.85rem; margin-top: 2px; }
+
+.controls { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.dates { display: flex; align-items: center; gap: var(--space-2); }
+.dates span { color: var(--text-faint); }
+
+/* KPIサマリ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: border-color var(--transition), transform var(--transition);
+  text-align: left;
+  width: 100%;
+}
+.stat:hover { border-color: var(--border-strong); }
+.statSelected { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15); }
+.statHead { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 0.85rem; }
+.dot { width: 9px; height: 9px; border-radius: 50%; }
+.statTotal { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin-top: var(--space-2); }
+.statSub { color: var(--text-muted); font-size: 0.75rem; margin-top: 3px; }
+
+.chartHint { color: var(--text-faint); font-size: 0.78rem; }
+
+@media (min-width: 640px) {
+  .grid { grid-template-columns: repeat(4, 1fr); }
+}

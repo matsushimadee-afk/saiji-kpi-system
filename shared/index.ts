@@ -294,6 +294,33 @@ export interface DailyStatsResponse {
   primaryKpiCode: string | null;
 }
 
+// ---------------------------------------------------------------------------
+// 分析（時系列トレンド）
+// ---------------------------------------------------------------------------
+
+/** 分析の対象範囲 */
+export type TrendScope = 'self' | 'all' | 'user';
+
+export interface TrendPoint {
+  date: string; // YYYY-MM-DD
+  counts: Record<string, number>;
+}
+
+export interface TrendResponse {
+  from: string;
+  to: string;
+  scope: TrendScope;
+  scopeLabel: string;
+  kpis: { id: number; code: string; name: string; color: string | null }[];
+  points: TrendPoint[];
+  /** 期間合計 (KPIコード別) */
+  totals: Record<string, number>;
+  /** 期間の転換率 */
+  rates: RateResult[];
+  /** 稼働日数 (入力のあった日数) */
+  activeDays: number;
+}
+
 export interface MonthlyStatsResponse {
   month: string; // YYYY-MM
   scope: DashboardScope;

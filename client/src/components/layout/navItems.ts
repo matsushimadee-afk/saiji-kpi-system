@@ -11,6 +11,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { to: '/sales', label: '入力', icon: '➕', roles: ['sales', 'leader', 'manager', 'admin'] },
   { to: '/dashboard', label: 'ダッシュボード', icon: '📊', roles: DASHBOARD_ROLES },
+  { to: '/report', label: '分析', icon: '📈', roles: ['sales', 'leader', 'manager', 'admin'] },
   { to: '/masters', label: 'マスタ管理', icon: '⚙️', roles: MASTER_ROLES },
   { to: '/help', label: '使い方', icon: '❓', roles: ['sales', 'leader', 'manager', 'admin'] },
 ];

@@ -8,11 +8,23 @@ import type {
   MonthlyStatsResponse,
   PeriodType,
   RankingRow,
+  TrendResponse,
+  TrendScope,
 } from '@saiji/shared';
 import { db } from '../../config/database.js';
+import { AppError } from '../../utils/AppError.js';
 import { extractHour, monthRange } from '../../utils/datetime.js';
 import { buildTargetIndex, resolveTarget, type ScopeRef } from '../targets/targets.service.js';
 import { computeRates, getActiveRateRows } from '../rates/rates.service.js';
+
+/** entry_date (Date または文字列) を YYYY-MM-DD に正規化 */
+function toDateStr(v: unknown): string {
+  if (v instanceof Date) {
+    const p = (n: number) => String(n).padStart(2, '0');
+    return `${v.getFullYear()}-${p(v.getMonth() + 1)}-${p(v.getDate())}`;
+  }
+  return String(v).slice(0, 10);
+}
 
 /** 集計スコープ (責任者は自部署、管理者は全体) */
 interface Scope {
@@ -292,4 +304,161 @@ export async function getMonthlyStats(user: AuthUser, month: string): Promise<Mo
     departmentRanking: departments,
     primaryKpiCode: primary,
   };
+}
+
+// ---------------------------------------------------------------------------
+// 分析（時系列トレンド）
+// ---------------------------------------------------------------------------
+
+interface TrendParams {
+  scope: TrendScope;
+  userId?: number;
+  from: string;
+  to: string;
+}
+
+/** 権限に応じて対象(担当者/部署)と表示ラベルを決定する */
+async function resolveTrendTarget(
+  user: AuthUser,
+  params: TrendParams,
+): Promise<{ userFilter: number | null; deptFilter: number | null; scope: TrendScope; scopeLabel: string }> {
+  // 営業担当・メンバーは自分のみ
+  if (user.role === 'sales') {
+    return { userFilter: user.id, deptFilter: null, scope: 'self', scopeLabel: '自分' };
+  }
+  if (params.scope === 'self') {
+    return { userFilter: user.id, deptFilter: null, scope: 'self', scopeLabel: '自分' };
+  }
+  if (params.scope === 'user' && params.userId) {
+    const target = await db()('users').where({ id: params.userId }).first();
+    if (!target) throw AppError.notFound('担当者が見つかりません');
+    if ((user.role === 'leader' || user.role === 'manager') && target.department_id !== user.departmentId) {
+      throw AppError.forbidden('自部署の担当者のみ閲覧できます');
+    }
+    return { userFilter: params.userId, deptFilter: null, scope: 'user', scopeLabel: target.display_name };
+  }
+  // all
+  if (user.role === 'admin') {
+    return { userFilter: null, deptFilter: null, scope: 'all', scopeLabel: '全体' };
+  }
+  // リーダー・責任者は自部署全体
+  return { userFilter: null, deptFilter: user.departmentId, scope: 'all', scopeLabel: user.departmentName ?? '自部署' };
+}
+
+/** 期間内の日別トレンドを取得する */
+export async function getTrend(user: AuthUser, params: TrendParams): Promise<TrendResponse> {
+  const { from, to } = params;
+  const target = await resolveTrendTarget(user, params);
+  const kpis = await loadActiveKpis();
+  const rateRows = await getActiveRateRows();
+
+  let q = db()('kpi_entries')
+    .where('kpi_entries.is_active', true)
+    .where('kpi_entries.entry_date', '>=', from)
+    .where('kpi_entries.entry_date', '<=', to);
+  if (target.userFilter != null) q = q.where('kpi_entries.user_id', target.userFilter);
+  if (target.deptFilter != null) q = q.where('kpi_entries.department_id', target.deptFilter);
+
+  const rows = await q
+    .groupBy('kpi_entries.entry_date', 'kpi_entries.kpi_id')
+    .select('kpi_entries.entry_date as date', 'kpi_entries.kpi_id as kpi_id')
+    .sum({ total: 'amount' });
+
+  const codeById = new Map(kpis.map((k) => [k.id, k.code]));
+  const byDate = new Map<string, Record<string, number>>();
+  const totals: Record<string, number> = {};
+  for (const r of rows as any[]) {
+    const code = codeById.get(r.kpi_id);
+    if (!code) continue;
+    const date = toDateStr(r.date);
+    const n = Number(r.total);
+    if (!byDate.has(date)) byDate.set(date, {});
+    byDate.get(date)![code] = n;
+    totals[code] = (totals[code] ?? 0) + n;
+  }
+  const points = [...byDate.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([date, counts]) => ({ date, counts }));
+
+  const countByKpiId = new Map<number, number>(kpis.map((k) => [k.id, totals[k.code] ?? 0]));
+  const rates = computeRates(rateRows, countByKpiId);
+
+  return {
+    from,
+    to,
+    scope: target.scope,
+    scopeLabel: target.scopeLabel,
+    kpis: kpis.map((k) => ({ id: k.id, code: k.code, name: k.name, color: k.color })),
+    points,
+    totals,
+    rates,
+    activeDays: points.length,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// CSV 出力（責任者・リーダー・管理者）
+// ---------------------------------------------------------------------------
+
+function csvCell(s: string): string {
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+/** 期間の (日付×担当者×会場) 別 KPI 件数を CSV 文字列で返す（Excel向けにBOM付き） */
+export async function buildCsv(user: AuthUser, from: string, to: string): Promise<string> {
+  const scope = resolveScope(user); // リーダー・責任者=自部署 / 管理者=全体
+  const kpis = await loadActiveKpis();
+
+  let q = db()('kpi_entries')
+    .where('kpi_entries.is_active', true)
+    .where('kpi_entries.entry_date', '>=', from)
+    .where('kpi_entries.entry_date', '<=', to);
+  if (scope.departmentId != null) q = q.where('kpi_entries.department_id', scope.departmentId);
+
+  const rows = await q
+    .leftJoin('users', 'kpi_entries.user_id', 'users.id')
+    .leftJoin('venues', 'kpi_entries.venue_id', 'venues.id')
+    .leftJoin('departments', 'kpi_entries.department_id', 'departments.id')
+    .groupBy(
+      'kpi_entries.entry_date',
+      'kpi_entries.user_id',
+      'users.display_name',
+      'kpi_entries.venue_id',
+      'venues.name',
+      'departments.name',
+      'kpi_entries.kpi_id',
+    )
+    .select(
+      'kpi_entries.entry_date as date',
+      'users.display_name as uname',
+      'departments.name as dept',
+      'venues.name as venue',
+      'kpi_entries.kpi_id as kpi_id',
+    )
+    .sum({ total: 'amount' });
+
+  const codeById = new Map(kpis.map((k) => [k.id, k.code]));
+  const recs = new Map<string, { date: string; uname: string; dept: string; venue: string; counts: Record<string, number> }>();
+  for (const r of rows as any[]) {
+    const date = toDateStr(r.date);
+    const uname = r.uname ?? '(未設定)';
+    const venue = r.venue ?? '(未設定)';
+    const key = `${date}||${uname}||${venue}`;
+    if (!recs.has(key)) recs.set(key, { date, uname, dept: r.dept ?? '', venue, counts: {} });
+    const code = codeById.get(r.kpi_id);
+    if (code) recs.get(key)!.counts[code] = Number(r.total);
+  }
+
+  const records = [...recs.values()].sort(
+    (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.uname.localeCompare(b.uname, 'ja')),
+  );
+
+  const header = ['日付', '営業担当', '部署', '会場', ...kpis.map((k) => k.name)];
+  const lines = [header.map(csvCell).join(',')];
+  for (const rec of records) {
+    const cols = [rec.date, rec.uname, rec.dept, rec.venue, ...kpis.map((k) => String(rec.counts[k.code] ?? 0))];
+    lines.push(cols.map(csvCell).join(','));
+  }
+  const BOM = String.fromCharCode(0xfeff); // 先頭BOMでExcelの文字化けを防ぐ
+  return BOM + lines.join('\r\n');
 }

@@ -12,6 +12,8 @@ import type {
   RosterSyncResult,
   Target,
   Team,
+  TrendResponse,
+  TrendScope,
   User,
   Venue,
 } from '@saiji/shared';
@@ -48,10 +50,28 @@ export const entriesApi = {
 };
 
 // ---------------- 集計 ----------------
+export interface RangeParams {
+  from?: string;
+  to?: string;
+}
+
 export const statsApi = {
   daily: (date?: string) => api.get<DailyStatsResponse>('/stats/daily', { params: { date } }).then((r) => r.data),
   monthly: (month?: string) =>
     api.get<MonthlyStatsResponse>('/stats/monthly', { params: { month } }).then((r) => r.data),
+  trend: (params: RangeParams & { scope?: TrendScope; userId?: number }) =>
+    api.get<TrendResponse>('/stats/trend', { params }).then((r) => r.data),
+  /** CSVをダウンロードする（認証付きで取得しブラウザ保存） */
+  downloadCsv: async (params: RangeParams) => {
+    const res = await api.get('/stats/export.csv', { params, responseType: 'blob' });
+    const name = /filename="?([^"]+)"?/.exec(res.headers['content-disposition'] ?? '')?.[1] ?? 'kpi.csv';
+    const url = URL.createObjectURL(res.data as Blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
 };
 
 // ---------------- マスタ ----------------

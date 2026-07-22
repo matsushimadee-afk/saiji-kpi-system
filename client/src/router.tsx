@@ -6,6 +6,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { SalesPage } from '@/features/sales/SalesPage';
 import { HelpPage } from '@/features/help/HelpPage';
+import { ReportPage } from '@/features/report/ReportPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { MastersLayout } from '@/features/masters/MastersLayout';
 import { UserMaster } from '@/features/masters/UserMaster';
@@ -29,6 +30,9 @@ export const router = createBrowserRouter([
 
           // 使い方ガイド: 全ロール
           { path: '/help', element: <HelpPage /> },
+
+          // 分析: 全ロール（営業担当は自分の数値のみ）
+          { path: '/report', element: <ReportPage /> },
 
           // ダッシュボード: リーダー・責任者・管理者
           {

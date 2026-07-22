@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Input, Tabs } from '@/components/ui';
+import { Button, Input, Tabs, useToast } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
+import { statsApi } from '@/api/endpoints';
+import { getErrorMessage } from '@/api/client';
 import { currentMonthStr, todayStr } from '@/lib/format';
+import { monthStartEnd } from '@/lib/dateRange';
 import { DailyTab } from './DailyTab';
 import { MonthlyTab } from './MonthlyTab';
 import styles from './Dashboard.module.css';
@@ -10,11 +13,26 @@ type TabKey = 'daily' | 'monthly';
 
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user)!;
+  const toast = useToast();
   const [tab, setTab] = useState<TabKey>('daily');
   const [date, setDate] = useState(todayStr());
   const [month, setMonth] = useState(currentMonthStr());
+  const [exporting, setExporting] = useState(false);
 
   const scopeLabel = user.role === 'admin' ? '全社' : user.departmentName ?? '自部署';
+
+  // 表示中の期間を CSV 出力する（デイリー=その日 / 当月=月初〜月末）
+  const exportCsv = async () => {
+    setExporting(true);
+    try {
+      const range = tab === 'daily' ? { from: date, to: date } : monthStartEnd(month);
+      await statsApi.downloadCsv(range);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'CSV出力に失敗しました'));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className={styles.page + ' fade-in'}>
@@ -54,6 +72,9 @@ export function DashboardPage() {
               style={{ width: 'auto', height: 38 }}
             />
           )}
+          <Button variant="ghost" size="sm" onClick={exportCsv} disabled={exporting}>
+            {exporting ? '出力中…' : '⬇ CSV出力'}
+          </Button>
         </div>
       </div>
 
