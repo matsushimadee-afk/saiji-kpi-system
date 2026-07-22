@@ -9,6 +9,7 @@ import styles from './Masters.module.css';
 interface Draft {
   employeeId: string;
   email: string;
+  kintoneUser: string;
   name: string;
   displayName: string;
   password: string;
@@ -24,6 +25,7 @@ interface Draft {
 const emptyDraft = (order: number): Draft => ({
   employeeId: '',
   email: '',
+  kintoneUser: '',
   name: '',
   displayName: '',
   password: '',
@@ -64,6 +66,7 @@ export function UserMaster() {
     setDraft({
       employeeId: u.employeeId,
       email: u.email ?? '',
+      kintoneUser: u.kintoneUser ?? '',
       name: u.name,
       displayName: u.displayName,
       password: '',
@@ -83,6 +86,7 @@ export function UserMaster() {
     try {
       const base = {
         email: draft.email || null,
+        kintoneUser: draft.kintoneUser || null,
         name: draft.name,
         displayName: draft.displayName,
         role: draft.role,
@@ -215,7 +219,10 @@ export function UserMaster() {
             <Input type="password" value={draft.password} onChange={(e) => setDraft({ ...draft, password: e.target.value })} placeholder={editing === 'new' ? '4文字以上' : '空欄で変更なし'} />
           </Field>
           <Field label="メール (Googleログイン用)">
-            <Input type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="例: taro@gmail.com" className="full" />
+            <Input type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="例: taro@gmail.com" />
+          </Field>
+          <Field label="キントーンユーザー (日報用)">
+            <Input value={draft.kintoneUser} onChange={(e) => setDraft({ ...draft, kintoneUser: e.target.value })} placeholder="キントーンのログイン名" />
           </Field>
           <Field label="氏名">
             <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="例: 営業 太郎" />

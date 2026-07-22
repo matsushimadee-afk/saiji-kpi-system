@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Venue } from '@saiji/shared';
-import { venueApi } from '@/api/endpoints';
+import { authApi, kintoneApi, venueApi } from '@/api/endpoints';
 import { useAuthStore } from '@/store/authStore';
 import { getErrorMessage } from '@/api/client';
 import { Button, Spinner, useToast } from '@/components/ui';
@@ -23,10 +23,26 @@ export function SalesPage() {
   });
 
   const { data, loading, increment, undo } = useMySummary(venueId);
+  const [kintoneEnabled, setKintoneEnabled] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     void venueApi.list(true).then(setVenues);
+    void authApi.config().then((c) => setKintoneEnabled(c.kintoneEnabled)).catch(() => {});
   }, []);
+
+  const submitReport = async () => {
+    if (!window.confirm('本日の数値で日報を提出します。\nキントーンの編集画面に移動するので、気付きを記入して保存してください。')) return;
+    setSubmitting(true);
+    try {
+      const r = await kintoneApi.submitDailyReport();
+      // キントーンの編集画面へ移動
+      window.location.href = r.editUrl;
+    } catch (err) {
+      toast.error(getErrorMessage(err, '日報の提出に失敗しました'));
+      setSubmitting(false);
+    }
+  };
 
   const handleVenue = (id: number | null) => {
     setVenueId(id);
@@ -70,6 +86,11 @@ export function SalesPage() {
             ))}
           </div>
           {data.rates.length > 0 && <RatesPanel rates={data.rates} title="本日の転換率" />}
+          {kintoneEnabled && (
+            <Button variant="primary" block onClick={submitReport} disabled={submitting} style={{ height: 52 }}>
+              {submitting ? '提出中…' : '📝 日報を提出する'}
+            </Button>
+          )}
         </>
       )}
 

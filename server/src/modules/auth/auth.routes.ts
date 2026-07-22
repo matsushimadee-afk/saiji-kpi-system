@@ -7,6 +7,7 @@ import { authenticate, requireUser, signToken } from '../../middleware/auth.js';
 import { env } from '../../config/env.js';
 import { AppError } from '../../utils/AppError.js';
 import { login, loginWithGoogle } from './auth.service.js';
+import { isEnabled as isKintoneEnabled } from '../kintone/kintone.service.js';
 
 /** Cookie ヘッダから指定名の値を取り出す */
 function getCookie(header: string | undefined, name: string): string | undefined {
@@ -31,7 +32,11 @@ export const authRouter = Router();
 
 // クライアントが Google ログインの有効可否 / Client ID を取得する（公開）
 authRouter.get('/config', (_req, res) => {
-  res.json({ googleEnabled: Boolean(env.googleClientId), googleClientId: env.googleClientId });
+  res.json({
+    googleEnabled: Boolean(env.googleClientId),
+    googleClientId: env.googleClientId,
+    kintoneEnabled: isKintoneEnabled(),
+  });
 });
 
 // Google ログイン (popup モード用。JSがcredentialを受け取り送信)

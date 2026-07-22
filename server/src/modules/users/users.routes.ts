@@ -14,6 +14,7 @@ const statusEnum = z.enum(['active', 'inactive']);
 const createSchema = z.object({
   employeeId: z.string().min(1),
   email: z.string().email().nullable().optional(),
+  kintoneUser: z.string().nullable().optional(),
   name: z.string().min(1),
   displayName: z.string().min(1),
   password: z.string().min(4),
@@ -28,6 +29,7 @@ const createSchema = z.object({
 
 const updateSchema = z.object({
   email: z.string().email().nullable().optional(),
+  kintoneUser: z.string().nullable().optional(),
   name: z.string().min(1).optional(),
   displayName: z.string().min(1).optional(),
   password: z.string().min(4).optional(),

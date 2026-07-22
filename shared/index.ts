@@ -115,6 +115,8 @@ export interface User {
   employeeId: string;
   /** Googleアカウント(Gmail)。Googleログインの突合キー */
   email: string | null;
+  /** キントーンのログイン名(ユーザーコード)。日報の「名前」欄に使用 */
+  kintoneUser: string | null;
   /** 'manual'（手動作成）/ 'roster'（Googleシート名簿同期由来） */
   source: string;
   name: string;
@@ -191,6 +193,14 @@ export interface LoginResponse {
 export interface AuthConfig {
   googleEnabled: boolean;
   googleClientId: string;
+  /** キントーン日報連携が有効か */
+  kintoneEnabled: boolean;
+}
+
+/** 日報提出の結果。編集画面(キントーン)URLを返す */
+export interface DailyReportResult {
+  recordId: string;
+  editUrl: string;
 }
 
 // 名簿(Googleシート)同期の結果

@@ -1,6 +1,7 @@
 import type {
   AuthConfig,
   CreateEntryRequest,
+  DailyReportResult,
   DailyStatsResponse,
   Department,
   Kpi,
@@ -36,6 +37,12 @@ export const authApi = {
 // ---------------- 名簿(Googleシート)同期 ----------------
 export const rosterApi = {
   sync: () => api.post<RosterSyncResult>('/roster/sync').then((r) => r.data),
+};
+
+// ---------------- キントーン日報連携 ----------------
+export const kintoneApi = {
+  submitDailyReport: (date?: string) =>
+    api.post<DailyReportResult>('/kintone/daily-report', date ? { date } : {}).then((r) => r.data),
 };
 
 // ---------------- KPI 入力 ----------------

@@ -72,6 +72,7 @@ export function mapUser(r: any): User {
     id: r.id,
     employeeId: r.employee_id,
     email: r.email ?? null,
+    kintoneUser: r.kintone_user ?? null,
     source: r.source ?? 'manual',
     name: r.name,
     displayName: r.display_name,

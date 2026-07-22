@@ -37,5 +37,11 @@ export const env = {
     sheetId: process.env.ROSTER_SHEET_ID ?? '1ya61d3P2cWppsnrXnQCLMNAeOrobtqitRze-Q5chgHA',
     gid: process.env.ROSTER_SHEET_GID ?? '', // 特定タブを指定する場合
   },
+  // キントーン連携（日報レコード追加）。トークン未設定なら無効。
+  kintone: {
+    subdomain: process.env.KINTONE_SUBDOMAIN ?? 'deedrive',
+    appId: process.env.KINTONE_APP_ID ?? '462',
+    apiToken: process.env.KINTONE_API_TOKEN ?? '',
+  },
   isProduction: process.env.NODE_ENV === 'production',
 } as const;

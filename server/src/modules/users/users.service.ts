@@ -11,6 +11,7 @@ const PUBLIC_COLUMNS = [
   'u.id',
   'u.employee_id',
   'u.email',
+  'u.kintone_user',
   'u.source',
   'u.name',
   'u.display_name',
@@ -59,6 +60,7 @@ export async function getUser(id: number): Promise<User> {
 export interface CreateUserInput {
   employeeId: string;
   email?: string | null;
+  kintoneUser?: string | null;
   name: string;
   displayName: string;
   password: string;
@@ -80,6 +82,7 @@ export async function createUser(input: CreateUserInput): Promise<User> {
     db()('users').insert({
       employee_id: input.employeeId,
       email: input.email ?? null,
+      kintone_user: input.kintoneUser ?? null,
       name: input.name,
       display_name: input.displayName,
       password_hash: passwordHash,
@@ -98,6 +101,7 @@ export async function createUser(input: CreateUserInput): Promise<User> {
 
 export interface UpdateUserInput {
   email?: string | null;
+  kintoneUser?: string | null;
   name?: string;
   displayName?: string;
   password?: string;
@@ -125,6 +129,7 @@ export async function updateUser(id: number, input: UpdateUserInput): Promise<Us
 
   const patch: Record<string, unknown> = { updated_at: db().fn.now() };
   if (input.email !== undefined) patch.email = input.email;
+  if (input.kintoneUser !== undefined) patch.kintone_user = input.kintoneUser;
   if (input.name !== undefined) patch.name = input.name;
   if (input.displayName !== undefined) patch.display_name = input.displayName;
   if (input.role !== undefined) patch.role = input.role;

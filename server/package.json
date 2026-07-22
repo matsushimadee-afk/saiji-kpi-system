@@ -13,7 +13,8 @@
     "seed": "tsx src/db/cli.ts seed",
     "db:reset": "tsx src/db/cli.ts reset",
     "sync:roster": "tsx src/scripts/syncRoster.ts",
-    "sample:entries": "tsx src/scripts/sampleEntries.ts"
+    "sample:entries": "tsx src/scripts/sampleEntries.ts",
+    "kintone:discover": "tsx src/scripts/kintoneDiscover.ts"
   },
   "dependencies": {
     "@saiji/shared": "1.0.0",

@@ -28,7 +28,7 @@ export function LoginPage() {
     authApi
       .config()
       .then(setConfig)
-      .catch(() => setConfig({ googleEnabled: false, googleClientId: '' }));
+      .catch(() => setConfig({ googleEnabled: false, googleClientId: '', kintoneEnabled: false }));
   }, []);
 
   if (status === 'authenticated' && user) {
