@@ -118,6 +118,7 @@ export async function syncRoster(): Promise<RosterSyncResult> {
   const iType = col('種別');
   const iEmail = col('Gmail');
   const iRetired = col('退職');
+  const iKintone = col('キントーンユーザー名'); // キントーン日報の「名前」欄に使うログイン名
   if (iName < 0 || iChannel < 0 || iEmail < 0) {
     throw AppError.badRequest('名簿シートの列（メンバー/販路/Gmail）が見つかりません');
   }
@@ -134,6 +135,7 @@ export async function syncRoster(): Promise<RosterSyncResult> {
     const email = (raw[iEmail] ?? '').trim().toLowerCase();
     const type = iType >= 0 ? (raw[iType] ?? '').trim() : '';
     const retired = iRetired >= 0 ? (raw[iRetired] ?? '').trim().toUpperCase() === 'TRUE' : false;
+    const kintoneUser = iKintone >= 0 ? (raw[iKintone] ?? '').trim() : '';
 
     if (!name || !email) continue; // 空行スキップ
     const mapping = resolveMapping(channel, type);
@@ -146,7 +148,7 @@ export async function syncRoster(): Promise<RosterSyncResult> {
     const departmentId = mapping.useCatsaiDept ? catsaiDeptId : null;
 
     const existing = await db()('users').where('email', email).first();
-    const common = {
+    const common: Record<string, unknown> = {
       name,
       display_name: name,
       role: mapping.role,
@@ -156,6 +158,10 @@ export async function syncRoster(): Promise<RosterSyncResult> {
       source: 'roster',
       updated_at: db().fn.now(),
     };
+    // 名簿に「キントーンユーザー名」列がある場合のみ同期対象にする（列が無い環境では既存値を保持）
+    if (iKintone >= 0) {
+      common.kintone_user = kintoneUser || null;
+    }
 
     if (existing) {
       await db()('users').where({ id: existing.id }).update(common);

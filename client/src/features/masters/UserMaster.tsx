@@ -223,6 +223,9 @@ export function UserMaster() {
           </Field>
           <Field label="キントーンユーザー (日報用)">
             <Input value={draft.kintoneUser} onChange={(e) => setDraft({ ...draft, kintoneUser: e.target.value })} placeholder="キントーンのログイン名" />
+            <span className="field__label" style={{ fontWeight: 400, opacity: 0.7, marginTop: 4 }}>
+              名簿シートの「キントーンユーザー名」列から同期で自動設定されます（同期時に上書き）。
+            </span>
           </Field>
           <Field label="氏名">
             <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="例: 営業 太郎" />
