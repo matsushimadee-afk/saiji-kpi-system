@@ -79,3 +79,63 @@
   font-size: 0.85em;
   color: var(--text);
 }
+
+/* お知らせ / アップデート情報 */
+.changelog {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.clEntry {
+  position: relative;
+  padding: 0 0 var(--space-4) var(--space-5);
+  border-left: 2px solid var(--border);
+}
+.clEntry:last-child { border-left-color: transparent; padding-bottom: 0; }
+.clEntry::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--brand);
+  border: 2px solid var(--surface);
+}
+.clHead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: 4px;
+}
+.clDate {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.clTag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--brand);
+}
+.clTagNEW { background: #ec4899; }
+.clTagImprove { background: #14b8a6; }
+.clTagFix { background: #f59e0b; }
+.clTitle { font-weight: 800; font-size: 1rem; margin-bottom: var(--space-2); }
+.clItems {
+  margin: 0;
+  padding-left: 1.1em;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.clItems li { color: var(--text-muted); font-size: 0.87rem; line-height: 1.65; }

@@ -4,7 +4,14 @@ import { kpiApi } from '@/api/endpoints';
 import { useAuthStore } from '@/store/authStore';
 import { Card, Spinner } from '@/components/ui';
 import { useList } from '@/features/masters/useList';
+import { sortedChangelog, formatChangeDate, type ChangeTag } from './changelog';
 import styles from './HelpPage.module.css';
+
+const TAG_CLASS: Record<ChangeTag, string> = {
+  NEW: styles.clTagNEW,
+  改善: styles.clTagImprove,
+  修正: styles.clTagFix,
+};
 
 /**
  * アプリ内の使い方ガイド。
@@ -15,6 +22,7 @@ export function HelpPage() {
   const user = useAuthStore((s) => s.user)!;
   const { items: kpis, loading } = useList<Kpi>(useCallback(() => kpiApi.list(false), []));
   const canSeeDashboard = DASHBOARD_ROLES.includes(user.role);
+  const changelog = sortedChangelog();
 
   return (
     <div className={styles.page + ' fade-in'}>
@@ -24,6 +32,32 @@ export function HelpPage() {
           {user.displayName} さん（{ROLE_LABELS[user.role]}）／ 現場でやることは「ボタンを押すだけ」です
         </div>
       </div>
+
+      {/* お知らせ / アップデート情報 */}
+      {changelog.length > 0 && (
+        <Card title="🎉 アップデート情報">
+          <ol className={styles.changelog}>
+            {changelog.map((entry) => (
+              <li className={styles.clEntry} key={entry.date + entry.title}>
+                <div className={styles.clHead}>
+                  <span className={styles.clDate}>{formatChangeDate(entry.date)}</span>
+                  {entry.tags?.map((tag) => (
+                    <span className={`${styles.clTag} ${TAG_CLASS[tag] ?? ''}`} key={tag}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <div className={styles.clTitle}>{entry.title}</div>
+                <ul className={styles.clItems}>
+                  {entry.items.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ol>
+        </Card>
+      )}
 
       {/* 毎日の使い方 */}
       <Card title="毎日の使い方">
