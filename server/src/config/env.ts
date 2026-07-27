@@ -43,5 +43,19 @@ export const env = {
     appId: process.env.KINTONE_APP_ID ?? '462',
     apiToken: process.env.KINTONE_API_TOKEN ?? '',
   },
+  // メール通知（日報提出を責任者・リーダーに通知）。ユーザー・パスワード未設定なら無効。
+  // Gmail の場合は「アプリパスワード」を MAIL_APP_PASSWORD に設定する。
+  mail: {
+    host: process.env.MAIL_HOST ?? 'smtp.gmail.com',
+    port: Number(process.env.MAIL_PORT ?? 465),
+    user: process.env.MAIL_USER ?? '', // 送信元Gmailアドレス
+    appPassword: process.env.MAIL_APP_PASSWORD ?? '',
+    fromName: process.env.MAIL_FROM_NAME ?? '催事KPI',
+    // 責任者・リーダー以外に固定で追加したい宛先（カンマ区切り、任意）
+    extraTo: (process.env.MAIL_EXTRA_TO ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  },
   isProduction: process.env.NODE_ENV === 'production',
 } as const;

@@ -41,8 +41,10 @@ export const rosterApi = {
 
 // ---------------- キントーン日報連携 ----------------
 export const kintoneApi = {
-  submitDailyReport: (date?: string) =>
-    api.post<DailyReportResult>('/kintone/daily-report', date ? { date } : {}).then((r) => r.data),
+  submitDailyReport: (comment?: string, date?: string) =>
+    api
+      .post<DailyReportResult>('/kintone/daily-report', { comment, date })
+      .then((r) => r.data),
 };
 
 // ---------------- KPI 入力 ----------------

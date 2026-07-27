@@ -3,7 +3,7 @@ import type { Venue } from '@saiji/shared';
 import { authApi, kintoneApi, venueApi } from '@/api/endpoints';
 import { useAuthStore } from '@/store/authStore';
 import { getErrorMessage } from '@/api/client';
-import { Button, Spinner, useToast } from '@/components/ui';
+import { Button, Modal, Spinner, useToast } from '@/components/ui';
 import { RatesPanel } from '@/components/RatesPanel';
 import { KpiButtonCard } from './KpiButtonCard';
 import { VenuePicker } from './VenuePicker';
@@ -25,6 +25,8 @@ export function SalesPage() {
   const { data, loading, increment, undo } = useMySummary(venueId);
   const [kintoneEnabled, setKintoneEnabled] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [comment, setComment] = useState('');
 
   useEffect(() => {
     void venueApi.list(true).then(setVenues);
@@ -32,14 +34,15 @@ export function SalesPage() {
   }, []);
 
   const submitReport = async () => {
-    if (!window.confirm('本日の数値で日報を提出します。\nキントーンの編集画面に移動するので、気付きを記入して保存してください。')) return;
     setSubmitting(true);
     try {
-      const r = await kintoneApi.submitDailyReport();
-      // キントーンの編集画面へ移動
-      window.location.href = r.editUrl;
+      await kintoneApi.submitDailyReport(comment);
+      setReportOpen(false);
+      setComment('');
+      toast.show('日報を提出しました ✅');
     } catch (err) {
       toast.error(getErrorMessage(err, '日報の提出に失敗しました'));
+    } finally {
       setSubmitting(false);
     }
   };
@@ -87,12 +90,41 @@ export function SalesPage() {
           </div>
           {data.rates.length > 0 && <RatesPanel rates={data.rates} title="本日の転換率" />}
           {kintoneEnabled && (
-            <Button variant="primary" block onClick={submitReport} disabled={submitting} style={{ height: 52 }}>
-              {submitting ? '提出中…' : '📝 日報を提出する'}
+            <Button variant="primary" block onClick={() => setReportOpen(true)} style={{ height: 52 }}>
+              📝 日報を提出する
             </Button>
           )}
         </>
       )}
+
+      <Modal
+        open={reportOpen}
+        title="日報を提出"
+        onClose={() => (submitting ? undefined : setReportOpen(false))}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setReportOpen(false)} disabled={submitting}>
+              キャンセル
+            </Button>
+            <Button variant="primary" onClick={submitReport} disabled={submitting}>
+              {submitting ? '提出中…' : 'この内容で提出'}
+            </Button>
+          </>
+        }
+      >
+        <p className={styles.reportLead}>
+          本日の数値でキントーンに日報を作成します。気付き・戦略があれば書いてください（任意）。
+        </p>
+        <textarea
+          className={styles.reportComment}
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="今日の気付き・戦略（任意）"
+          rows={5}
+          maxLength={2000}
+          autoFocus
+        />
+      </Modal>
 
       {data?.canUndo && (
         <div className={styles.undoBar}>

@@ -2,6 +2,7 @@ import type { AuthUser, DailyReportResult } from '@saiji/shared';
 import { db } from '../../config/database.js';
 import { env } from '../../config/env.js';
 import { AppError } from '../../utils/AppError.js';
+import { notifyDailyReport } from '../notify/dailyReportMail.js';
 
 /**
  * キントーン日報連携。
@@ -64,8 +65,12 @@ export async function discoverFields(): Promise<FieldMeta[]> {
   return [...idx.values()];
 }
 
-/** 当日の日報をキントーンに登録し、編集画面URLを返す */
-export async function submitDailyReport(user: AuthUser, date: string): Promise<DailyReportResult> {
+/** 当日の日報をキントーンに登録し、レコードの閲覧URLを返す */
+export async function submitDailyReport(
+  user: AuthUser,
+  date: string,
+  comment?: string,
+): Promise<DailyReportResult> {
   if (!isEnabled()) {
     throw new AppError(501, 'キントーン連携が未設定です', 'KINTONE_NOT_CONFIGURED');
   }
@@ -83,6 +88,12 @@ export async function submitDailyReport(user: AuthUser, date: string): Promise<D
     .select('kpi_id')
     .sum({ total: 'amount' });
   const countByKpiId = new Map<number, number>(countRows.map((r: any) => [r.kpi_id, Number(r.total)]));
+
+  // 空提出（当日カウンター未入力）を防ぐ。0だけのレコードがキントーンに溜まるのを避ける。
+  const totalCount = [...countByKpiId.values()].reduce((a, b) => a + b, 0);
+  if (totalCount === 0) {
+    throw AppError.badRequest('本日の入力がまだありません。カウンターを押してから提出してください。');
+  }
 
   // 当日の会場（最新入力の会場）
   const last = await db()('kpi_entries')
@@ -116,6 +127,12 @@ export async function submitDailyReport(user: AuthUser, date: string): Promise<D
   if (nameF) record[nameF.code] = { value: [{ code: me.kintone_user }] };
   const venueF = field('催事施設');
   if (venueF && venueName) record[venueF.code] = { value: venueName };
+  // 気付きコメント（アプリの提出画面で入力）。編集不要にするため作成時に一緒に登録する。
+  const trimmedComment = (comment ?? '').trim();
+  if (trimmedComment) {
+    const commentF = field('今日の気付きor戦略');
+    if (commentF) record[commentF.code] = { value: trimmedComment };
+  }
 
   const res = await fetch(`${BASE()}/k/v1/record.json`, {
     method: 'POST',
@@ -128,6 +145,22 @@ export async function submitDailyReport(user: AuthUser, date: string): Promise<D
   }
   const data = (await res.json()) as { id: string };
   const recordId = String(data.id);
-  const editUrl = `${BASE()}/k/${env.kintone.appId}/show#record=${recordId}&mode=edit`;
-  return { recordId, editUrl };
+  // 閲覧URL（編集モードにしない）。メンバーは閲覧権限で開ける。
+  const recordUrl = `${BASE()}/k/${env.kintone.appId}/show#record=${recordId}`;
+
+  // 責任者・リーダーへメール通知（提出をブロックしないよう待たずに実行）
+  const lines = kpis
+    .slice()
+    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+    .map((k) => ({ name: k.name as string, count: countByKpiId.get(k.id) ?? 0 }));
+  void notifyDailyReport({
+    submitterName: (me.display_name as string) || (me.name as string) || me.kintone_user,
+    submitterEmail: (me.email as string) ?? null,
+    date,
+    venueName,
+    lines,
+    editUrl: recordUrl,
+  });
+
+  return { recordId, recordUrl };
 }

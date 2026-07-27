@@ -29,10 +29,21 @@ services:
         value: deedrive
       - key: KINTONE_APP_ID
         value: "462"
-      # 作成時に入力（Neonの接続文字列 / GoogleクライアントID / キントーンAPIトークン）
+      # メール通知（日報提出を責任者・リーダーへ）。未設定なら通知しない。
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "465"
+      - key: MAIL_FROM_NAME
+        value: 催事KPI
+      # 作成時に入力（Neonの接続文字列 / GoogleクライアントID / キントーンAPIトークン / メール送信用）
       - key: DATABASE_URL
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: KINTONE_API_TOKEN
+        sync: false
+      - key: MAIL_USER
+        sync: false
+      - key: MAIL_APP_PASSWORD
         sync: false

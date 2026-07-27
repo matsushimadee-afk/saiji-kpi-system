@@ -17,7 +17,7 @@ async function main() {
     date,
   );
   console.log('登録OK: recordId =', result.recordId);
-  console.log('編集URL:', result.editUrl);
+  console.log('閲覧URL:', result.recordUrl);
   await db().destroy();
 }
 

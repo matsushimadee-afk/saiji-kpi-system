@@ -197,10 +197,16 @@ export interface AuthConfig {
   kintoneEnabled: boolean;
 }
 
-/** 日報提出の結果。編集画面(キントーン)URLを返す */
+/** 日報提出の結果。作成したレコードの閲覧URLを返す */
 export interface DailyReportResult {
   recordId: string;
-  editUrl: string;
+  recordUrl: string;
+}
+
+/** 日報提出リクエスト（当日の数値＋任意の気付きコメント） */
+export interface DailyReportRequest {
+  date?: string;
+  comment?: string;
 }
 
 // 名簿(Googleシート)同期の結果
