@@ -26,7 +26,9 @@ export function SalesPage() {
   const [kintoneEnabled, setKintoneEnabled] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  const [comment, setComment] = useState('');
+  const [strategy, setStrategy] = useState('');
+  const [roleplay, setRoleplay] = useState('');
+  const [kpiThoughts, setKpiThoughts] = useState('');
 
   useEffect(() => {
     void venueApi.list(true).then(setVenues);
@@ -36,9 +38,11 @@ export function SalesPage() {
   const submitReport = async () => {
     setSubmitting(true);
     try {
-      await kintoneApi.submitDailyReport(comment);
+      await kintoneApi.submitDailyReport({ strategy, roleplay, kpiThoughts });
       setReportOpen(false);
-      setComment('');
+      setStrategy('');
+      setRoleplay('');
+      setKpiThoughts('');
       toast.show('日報を提出しました ✅');
     } catch (err) {
       toast.error(getErrorMessage(err, '日報の提出に失敗しました'));
@@ -113,17 +117,44 @@ export function SalesPage() {
         }
       >
         <p className={styles.reportLead}>
-          本日の数値でキントーンに日報を作成します。気付き・戦略があれば書いてください（任意）。
+          本日の数値でキントーンに日報を作成します。下の記入欄はすべて任意です。
         </p>
-        <textarea
-          className={styles.reportComment}
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="今日の気付き・戦略（任意）"
-          rows={5}
-          maxLength={2000}
-          autoFocus
-        />
+        <div className={styles.reportFields}>
+          <label className={styles.reportField}>
+            <span className={styles.reportLabel}>今日の気付き・戦略</span>
+            <textarea
+              className={styles.reportComment}
+              value={strategy}
+              onChange={(e) => setStrategy(e.target.value)}
+              placeholder="今日の気付き・戦略（任意）"
+              rows={4}
+              maxLength={2000}
+              autoFocus
+            />
+          </label>
+          <label className={styles.reportField}>
+            <span className={styles.reportLabel}>ロープレに対しての気付き</span>
+            <textarea
+              className={styles.reportComment}
+              value={roleplay}
+              onChange={(e) => setRoleplay(e.target.value)}
+              placeholder="ロープレの気付き（任意）"
+              rows={3}
+              maxLength={2000}
+            />
+          </label>
+          <label className={styles.reportField}>
+            <span className={styles.reportLabel}>KPIからの所感</span>
+            <textarea
+              className={styles.reportComment}
+              value={kpiThoughts}
+              onChange={(e) => setKpiThoughts(e.target.value)}
+              placeholder="KPIを見ての所感（任意）"
+              rows={3}
+              maxLength={2000}
+            />
+          </label>
+        </div>
       </Modal>
 
       {data?.canUndo && (

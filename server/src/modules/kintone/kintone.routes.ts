@@ -13,7 +13,13 @@ kintoneRouter.post(
   asyncHandler(async (req, res) => {
     const me = requireUser(req);
     const date = typeof req.body?.date === 'string' && isValidDate(req.body.date) ? req.body.date : todayDate();
-    const comment = typeof req.body?.comment === 'string' ? req.body.comment.slice(0, 2000) : undefined;
-    res.json(await kintone.submitDailyReport(me, date, comment));
+    const pick = (v: unknown) => (typeof v === 'string' ? v.slice(0, 2000) : undefined);
+    const rawNotes = (req.body?.notes ?? {}) as Record<string, unknown>;
+    const notes = {
+      strategy: pick(rawNotes.strategy),
+      roleplay: pick(rawNotes.roleplay),
+      kpiThoughts: pick(rawNotes.kpiThoughts),
+    };
+    res.json(await kintone.submitDailyReport(me, date, notes));
   }),
 );

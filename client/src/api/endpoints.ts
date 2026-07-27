@@ -1,6 +1,7 @@
 import type {
   AuthConfig,
   CreateEntryRequest,
+  DailyReportNotes,
   DailyReportResult,
   DailyStatsResponse,
   Department,
@@ -41,9 +42,9 @@ export const rosterApi = {
 
 // ---------------- キントーン日報連携 ----------------
 export const kintoneApi = {
-  submitDailyReport: (comment?: string, date?: string) =>
+  submitDailyReport: (notes?: DailyReportNotes, date?: string) =>
     api
-      .post<DailyReportResult>('/kintone/daily-report', { comment, date })
+      .post<DailyReportResult>('/kintone/daily-report', { notes, date })
       .then((r) => r.data),
 };
 

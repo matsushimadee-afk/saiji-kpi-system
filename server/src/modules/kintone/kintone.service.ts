@@ -1,4 +1,4 @@
-import type { AuthUser, DailyReportResult } from '@saiji/shared';
+import type { AuthUser, DailyReportNotes, DailyReportResult } from '@saiji/shared';
 import { db } from '../../config/database.js';
 import { env } from '../../config/env.js';
 import { AppError } from '../../utils/AppError.js';
@@ -6,8 +6,8 @@ import { notifyDailyReport } from '../notify/dailyReportMail.js';
 
 /**
  * キントーン日報連携。
- * カウンターの当日数値をキントーンの日報アプリにレコードとして追加し、
- * 編集画面URLを返す（本人がそこで気付きを記入）。
+ * カウンターの当日数値と自由記述メモをキントーンの日報アプリにレコードとして追加し、
+ * 作成したレコードの閲覧URLを返す（キントーンでの編集は不要＝アプリ内で完結）。
  */
 
 /** KPIコード → キントーンのフィールド名（ラベル）。カウンターと表記が違う項目を吸収 */
@@ -20,6 +20,13 @@ const KPI_TO_KINTONE_LABEL: Record<string, string> = {
   talk: '商談(着座なし)',
   company_intro: '会社案内アウト',
   order: '受注数',
+};
+
+/** 自由記述メモのキー → キントーンのフィールド名（ラベル） */
+const NOTE_TO_KINTONE_LABEL: Record<keyof DailyReportNotes, string> = {
+  strategy: '今日の気付きor戦略',
+  roleplay: 'ロープレに対しての気付き',
+  kpiThoughts: 'KPIからの所感',
 };
 
 const BASE = () => `https://${env.kintone.subdomain}.cybozu.com`;
@@ -69,7 +76,7 @@ export async function discoverFields(): Promise<FieldMeta[]> {
 export async function submitDailyReport(
   user: AuthUser,
   date: string,
-  comment?: string,
+  notes?: DailyReportNotes,
 ): Promise<DailyReportResult> {
   if (!isEnabled()) {
     throw new AppError(501, 'キントーン連携が未設定です', 'KINTONE_NOT_CONFIGURED');
@@ -127,11 +134,12 @@ export async function submitDailyReport(
   if (nameF) record[nameF.code] = { value: [{ code: me.kintone_user }] };
   const venueF = field('催事施設');
   if (venueF && venueName) record[venueF.code] = { value: venueName };
-  // 気付きコメント（アプリの提出画面で入力）。編集不要にするため作成時に一緒に登録する。
-  const trimmedComment = (comment ?? '').trim();
-  if (trimmedComment) {
-    const commentF = field('今日の気付きor戦略');
-    if (commentF) record[commentF.code] = { value: trimmedComment };
+  // 自由記述メモ（アプリの提出画面で入力）。編集不要にするため作成時に一緒に登録する。
+  for (const key of Object.keys(NOTE_TO_KINTONE_LABEL) as (keyof DailyReportNotes)[]) {
+    const text = (notes?.[key] ?? '').trim();
+    if (!text) continue;
+    const f = field(NOTE_TO_KINTONE_LABEL[key]);
+    if (f) record[f.code] = { value: text };
   }
 
   const res = await fetch(`${BASE()}/k/v1/record.json`, {
