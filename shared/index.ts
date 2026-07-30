@@ -213,10 +213,12 @@ export interface DailyReportNotes {
   kpiThoughts?: string;
 }
 
-/** 日報提出リクエスト（当日の数値＋任意の自由記述メモ） */
+/** 日報提出リクエスト（当日の数値＋任意の自由記述メモ・場所代） */
 export interface DailyReportRequest {
   date?: string;
   notes?: DailyReportNotes;
+  /** 場所代（キントーンの「場所代」欄へ。任意） */
+  venueCost?: string;
 }
 
 // 名簿(Googleシート)同期の結果

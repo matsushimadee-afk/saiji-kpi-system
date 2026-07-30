@@ -77,6 +77,7 @@ export async function submitDailyReport(
   user: AuthUser,
   date: string,
   notes?: DailyReportNotes,
+  venueCost?: string,
 ): Promise<DailyReportResult> {
   if (!isEnabled()) {
     throw new AppError(501, 'キントーン連携が未設定です', 'KINTONE_NOT_CONFIGURED');
@@ -140,6 +141,12 @@ export async function submitDailyReport(
     if (!text) continue;
     const f = field(NOTE_TO_KINTONE_LABEL[key]);
     if (f) record[f.code] = { value: text };
+  }
+  // 場所代（アプリの提出画面で入力）
+  const cost = (venueCost ?? '').trim();
+  if (cost) {
+    const costF = field('場所代');
+    if (costF) record[costF.code] = { value: cost };
   }
 
   const res = await fetch(`${BASE()}/k/v1/record.json`, {

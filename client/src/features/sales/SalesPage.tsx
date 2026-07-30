@@ -29,6 +29,7 @@ export function SalesPage() {
   const [strategy, setStrategy] = useState('');
   const [roleplay, setRoleplay] = useState('');
   const [kpiThoughts, setKpiThoughts] = useState('');
+  const [venueCost, setVenueCost] = useState('');
 
   useEffect(() => {
     void venueApi.list(true).then(setVenues);
@@ -38,11 +39,12 @@ export function SalesPage() {
   const submitReport = async () => {
     setSubmitting(true);
     try {
-      await kintoneApi.submitDailyReport({ strategy, roleplay, kpiThoughts });
+      await kintoneApi.submitDailyReport({ notes: { strategy, roleplay, kpiThoughts }, venueCost });
       setReportOpen(false);
       setStrategy('');
       setRoleplay('');
       setKpiThoughts('');
+      setVenueCost('');
       toast.show('日報を提出しました ✅');
     } catch (err) {
       toast.error(getErrorMessage(err, '日報の提出に失敗しました'));
@@ -120,6 +122,18 @@ export function SalesPage() {
           本日の数値でキントーンに日報を作成します。下の記入欄はすべて任意です。
         </p>
         <div className={styles.reportFields}>
+          <label className={styles.reportField}>
+            <span className={styles.reportLabel}>場所代</span>
+            <input
+              className={styles.reportInput}
+              type="text"
+              inputMode="numeric"
+              value={venueCost}
+              onChange={(e) => setVenueCost(e.target.value)}
+              placeholder="例: 5000（任意）"
+              maxLength={100}
+            />
+          </label>
           <label className={styles.reportField}>
             <span className={styles.reportLabel}>今日の気付き・戦略</span>
             <textarea

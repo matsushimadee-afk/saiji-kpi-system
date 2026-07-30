@@ -126,3 +126,19 @@
 .reportFields { display: flex; flex-direction: column; gap: var(--space-4); }
 .reportField { display: flex; flex-direction: column; gap: 6px; }
 .reportLabel { font-weight: 700; font-size: 0.9rem; }
+.reportInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+.reportInput:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent);
+}

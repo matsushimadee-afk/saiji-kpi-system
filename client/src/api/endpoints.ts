@@ -42,9 +42,9 @@ export const rosterApi = {
 
 // ---------------- キントーン日報連携 ----------------
 export const kintoneApi = {
-  submitDailyReport: (notes?: DailyReportNotes, date?: string) =>
+  submitDailyReport: (payload: { notes?: DailyReportNotes; venueCost?: string; date?: string }) =>
     api
-      .post<DailyReportResult>('/kintone/daily-report', { notes, date })
+      .post<DailyReportResult>('/kintone/daily-report', payload)
       .then((r) => r.data),
 };
 
