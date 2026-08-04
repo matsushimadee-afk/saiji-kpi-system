@@ -7,16 +7,23 @@ import { router } from './router';
 
 /**
  * Google ログイン(redirectモード)からの戻り。
- * サーバーが `/#token=<JWT>` へリダイレクトしてくるので、
- * アプリ起動時に一度だけ取り込んで保存し、URLからは消す。
+ * 成功時: サーバーが `/#token=<JWT>` へ戻すので取り込んで保存。
+ * 失敗時: サーバーが `/#login_error=<メッセージ>` へ戻すので、ログイン画面で表示できるよう控える。
+ * いずれもURLからは消す。
  */
-(function pickUpTokenFromHash() {
+(function pickUpFromHash() {
   if (typeof window === 'undefined') return;
   const hash = window.location.hash;
+  const clearHash = () =>
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
   if (hash.startsWith('#token=')) {
     const token = decodeURIComponent(hash.slice('#token='.length));
     if (token) setToken(token);
-    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    clearHash();
+  } else if (hash.startsWith('#login_error=')) {
+    const message = decodeURIComponent(hash.slice('#login_error='.length));
+    if (message) sessionStorage.setItem('login_error', message);
+    clearHash();
   }
 })();
 

@@ -29,6 +29,12 @@ export function LoginPage() {
       .config()
       .then(setConfig)
       .catch(() => setConfig({ googleEnabled: false, googleClientId: '', kintoneEnabled: false }));
+    // Google ログイン(redirect)が失敗して戻ってきた場合のメッセージを表示
+    const loginError = sessionStorage.getItem('login_error');
+    if (loginError) {
+      setError(loginError);
+      sessionStorage.removeItem('login_error');
+    }
   }, []);
 
   if (status === 'authenticated' && user) {

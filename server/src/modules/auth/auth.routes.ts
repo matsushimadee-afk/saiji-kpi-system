@@ -52,22 +52,43 @@ authRouter.post(
 
 // Google ログイン (redirect モード): Google がここへ id_token をフォームPOSTする。
 // モバイルSafari等でも確実に動くよう、同一タブのリダイレクトで完結させる。
+//
+// 重要: このエンドポイントは「全画面遷移のPOST」で叩かれる。ここで例外を投げると
+// ブラウザには生のJSONエラーが表示され、ユーザーが行き止まりになる（通信が不安定な時に
+// g_csrf_token が食い違うと発生していた）。そのため失敗時も必ずログイン画面へ戻す。
 authRouter.post(
   '/google/callback',
   asyncHandler(async (req, res) => {
-    // CSRF (double-submit cookie)。両方あれば一致を検証。
-    const bodyCsrf = req.body?.g_csrf_token as string | undefined;
-    const cookieCsrf = getCookie(req.headers.cookie, 'g_csrf_token');
-    if (bodyCsrf && cookieCsrf && bodyCsrf !== cookieCsrf) {
-      throw AppError.badRequest('CSRFトークンの検証に失敗しました');
-    }
-    const credential = req.body?.credential as string | undefined;
-    if (!credential) throw AppError.badRequest('認証情報がありません');
+    // エラー時: 古い g_csrf_token を消してからログイン画面へ戻す（再試行がクリーンに始まる）
+    const backToLogin = (message: string) => {
+      res.setHeader('Set-Cookie', 'g_csrf_token=; Path=/; Max-Age=0; SameSite=None; Secure');
+      res.redirect(`/#login_error=${encodeURIComponent(message)}`);
+    };
 
-    const user = await loginWithGoogle(credential);
-    const token = signToken(user);
-    // SPA へ戻す (トークンは URL ハッシュで渡し、クライアントが保存する)
-    res.redirect(`/#token=${encodeURIComponent(token)}`);
+    try {
+      // CSRF (double-submit cookie)。両方あって食い違う時のみ失敗扱い。
+      const bodyCsrf = req.body?.g_csrf_token as string | undefined;
+      const cookieCsrf = getCookie(req.headers.cookie, 'g_csrf_token');
+      if (bodyCsrf && cookieCsrf && bodyCsrf !== cookieCsrf) {
+        backToLogin('通信が不安定でした。お手数ですが、もう一度ログインしてください。');
+        return;
+      }
+      const credential = req.body?.credential as string | undefined;
+      if (!credential) {
+        backToLogin('ログイン情報を受け取れませんでした。もう一度お試しください。');
+        return;
+      }
+
+      const user = await loginWithGoogle(credential);
+      const token = signToken(user);
+      // SPA へ戻す (トークンは URL ハッシュで渡し、クライアントが保存する)
+      res.redirect(`/#token=${encodeURIComponent(token)}`);
+    } catch (err) {
+      // 名簿未登録・退職などのメッセージはそのまま見せる。それ以外は汎用文言。
+      const message =
+        err instanceof AppError ? err.message : 'ログインに失敗しました。もう一度お試しください。';
+      backToLogin(message);
+    }
   }),
 );
 
