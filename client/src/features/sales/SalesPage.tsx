@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { getErrorMessage } from '@/api/client';
 import { Button, Modal, Select, Spinner, useToast } from '@/components/ui';
 import { RatesPanel } from '@/components/RatesPanel';
-import { formatNumber } from '@/lib/format';
+import { formatNumber, todayStr } from '@/lib/format';
 import { KpiButtonCard } from './KpiButtonCard';
 import { DailyVenueManager } from './DailyVenueManager';
 import { useMySummary } from './useMySummary';
@@ -20,6 +20,7 @@ export function SalesPage() {
   const [allVenues, setAllVenues] = useState<Venue[]>([]);
   const [venueId, setVenueId] = useState<number | null>(null);
   const [managerOpen, setManagerOpen] = useState(false);
+  const [dailyLoaded, setDailyLoaded] = useState(false);
 
   const { data, loading, increment, undo } = useMySummary(venueId);
   const [kintoneEnabled, setKintoneEnabled] = useState(false);
@@ -30,7 +31,10 @@ export function SalesPage() {
   const [kpiThoughts, setKpiThoughts] = useState('');
 
   const reloadDaily = () => {
-    void dailyVenueApi.list().then(setTodayVenues);
+    void dailyVenueApi.list().then((v) => {
+      setTodayVenues(v);
+      setDailyLoaded(true);
+    });
   };
 
   useEffect(() => {
@@ -38,6 +42,16 @@ export function SalesPage() {
     void authApi.config().then((c) => setKintoneEnabled(c.kintoneEnabled)).catch(() => {});
     if (canManageVenue) void venueApi.list(true).then(setAllVenues);
   }, [canManageVenue]);
+
+  // リーダー・責任者・管理者: 本日の会場が未設定なら、その日の初回アクセス時に設定ポップアップを自動表示（1日1回）
+  useEffect(() => {
+    if (!dailyLoaded || !canManageVenue) return;
+    if (todayVenues.length > 0) return;
+    const key = `venuePrompt_${todayStr()}`;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, '1');
+    setManagerOpen(true);
+  }, [dailyLoaded, canManageVenue, todayVenues]);
 
   // 本日の会場に合わせて自分の会場を自動調整（1つなら自動選択、選択中が無ければ解除）
   useEffect(() => {
