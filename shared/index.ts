@@ -86,6 +86,17 @@ export interface Venue {
   updatedAt: string;
 }
 
+/** 本日の会場（日次設定）: リーダーが設定する当日の会場＋場所代 */
+export interface DailyVenue {
+  id: number;
+  date: string;
+  venueId: number;
+  venueName: string;
+  area: string | null;
+  cost: number | null;
+  createdAt: string;
+}
+
 /** 転換率（数値項目）: 分子KPI ÷ 分母KPI で自動計算する指標 */
 export interface RateMetric {
   id: number;

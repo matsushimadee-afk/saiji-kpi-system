@@ -1,26 +1,25 @@
-import { useEffect, useState } from 'react';
-import type { Venue } from '@saiji/shared';
-import { authApi, kintoneApi, venueApi } from '@/api/endpoints';
+import { useEffect, useMemo, useState } from 'react';
+import { DASHBOARD_ROLES, type DailyVenue, type Venue } from '@saiji/shared';
+import { authApi, dailyVenueApi, kintoneApi, venueApi } from '@/api/endpoints';
 import { useAuthStore } from '@/store/authStore';
 import { getErrorMessage } from '@/api/client';
-import { Button, Modal, Spinner, useToast } from '@/components/ui';
+import { Button, Modal, Select, Spinner, useToast } from '@/components/ui';
 import { RatesPanel } from '@/components/RatesPanel';
+import { formatNumber } from '@/lib/format';
 import { KpiButtonCard } from './KpiButtonCard';
-import { VenuePicker } from './VenuePicker';
+import { DailyVenueManager } from './DailyVenueManager';
 import { useMySummary } from './useMySummary';
 import styles from './SalesPage.module.css';
-
-const VENUE_KEY = 'kpi_venue';
 
 export function SalesPage() {
   const user = useAuthStore((s) => s.user)!;
   const toast = useToast();
+  const canManageVenue = DASHBOARD_ROLES.includes(user.role);
 
-  const [venues, setVenues] = useState<Venue[]>([]);
-  const [venueId, setVenueId] = useState<number | null>(() => {
-    const saved = localStorage.getItem(VENUE_KEY);
-    return saved ? Number(saved) : null;
-  });
+  const [todayVenues, setTodayVenues] = useState<DailyVenue[]>([]);
+  const [allVenues, setAllVenues] = useState<Venue[]>([]);
+  const [venueId, setVenueId] = useState<number | null>(null);
+  const [managerOpen, setManagerOpen] = useState(false);
 
   const { data, loading, increment, undo } = useMySummary(venueId);
   const [kintoneEnabled, setKintoneEnabled] = useState(false);
@@ -29,34 +28,45 @@ export function SalesPage() {
   const [strategy, setStrategy] = useState('');
   const [roleplay, setRoleplay] = useState('');
   const [kpiThoughts, setKpiThoughts] = useState('');
-  const [venueCost, setVenueCost] = useState('');
+
+  const reloadDaily = () => {
+    void dailyVenueApi.list().then(setTodayVenues);
+  };
 
   useEffect(() => {
-    void venueApi.list(true).then(setVenues);
+    reloadDaily();
     void authApi.config().then((c) => setKintoneEnabled(c.kintoneEnabled)).catch(() => {});
-  }, []);
+    if (canManageVenue) void venueApi.list(true).then(setAllVenues);
+  }, [canManageVenue]);
+
+  // 本日の会場に合わせて自分の会場を自動調整（1つなら自動選択、選択中が無ければ解除）
+  useEffect(() => {
+    setVenueId((prev) => {
+      if (todayVenues.length === 1) return todayVenues[0].venueId;
+      if (prev != null && todayVenues.some((v) => v.venueId === prev)) return prev;
+      return null;
+    });
+  }, [todayVenues]);
+
+  const selectedVenue = useMemo(
+    () => todayVenues.find((v) => v.venueId === venueId) ?? null,
+    [todayVenues, venueId],
+  );
 
   const submitReport = async () => {
     setSubmitting(true);
     try {
-      await kintoneApi.submitDailyReport({ notes: { strategy, roleplay, kpiThoughts }, venueCost });
+      await kintoneApi.submitDailyReport({ notes: { strategy, roleplay, kpiThoughts } });
       setReportOpen(false);
       setStrategy('');
       setRoleplay('');
       setKpiThoughts('');
-      setVenueCost('');
       toast.show('日報を提出しました ✅');
     } catch (err) {
       toast.error(getErrorMessage(err, '日報の提出に失敗しました'));
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleVenue = (id: number | null) => {
-    setVenueId(id);
-    if (id) localStorage.setItem(VENUE_KEY, String(id));
-    else localStorage.removeItem(VENUE_KEY);
   };
 
   const handleAdd = (kpiId: number) => {
@@ -75,6 +85,8 @@ export function SalesPage() {
     weekday: 'short',
   });
 
+  const costText = (v: DailyVenue) => (v.cost != null ? `（${formatNumber(v.cost)}円）` : '');
+
   return (
     <div className={styles.page + ' fade-in'}>
       <div className={styles.topbar}>
@@ -82,8 +94,40 @@ export function SalesPage() {
           <div className={styles.hello}>{user.displayName} さん</div>
           <div className={styles.date}>{dateLabel} の入力</div>
         </div>
-        <VenuePicker venues={venues} value={venueId} onChange={handleVenue} />
+        <div className="row row-2">
+          {/* 本日の会場 */}
+          {todayVenues.length === 0 ? (
+            <span className="muted" style={{ fontSize: '0.85rem', fontWeight: 600 }}>📍 本日の会場 未設定</span>
+          ) : todayVenues.length === 1 ? (
+            <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>
+              📍 {todayVenues[0].venueName}
+              <span className="faint" style={{ fontWeight: 600 }}> {costText(todayVenues[0])}</span>
+            </span>
+          ) : (
+            <Select
+              value={venueId ?? ''}
+              onChange={(e) => setVenueId(e.target.value ? Number(e.target.value) : null)}
+              style={{ width: 'auto', minWidth: 150, height: 38 }}
+            >
+              <option value="">会場を選ぶ</option>
+              {todayVenues.map((v) => (
+                <option key={v.venueId} value={v.venueId}>
+                  {v.venueName}
+                  {costText(v)}
+                </option>
+              ))}
+            </Select>
+          )}
+          {canManageVenue && (
+            <Button variant="ghost" size="sm" onClick={() => setManagerOpen(true)}>⚙ 会場設定</Button>
+          )}
+        </div>
       </div>
+
+      {/* 会場が複数あるのに未選択のときの案内 */}
+      {todayVenues.length > 1 && venueId == null && (
+        <div className="muted" style={{ fontSize: '0.85rem' }}>▲ 自分の会場を選んでからカウントしてください</div>
+      )}
 
       {loading || !data ? (
         <Spinner label="読み込み中…" />
@@ -119,21 +163,9 @@ export function SalesPage() {
         }
       >
         <p className={styles.reportLead}>
-          本日の数値でキントーンに日報を作成します。下の記入欄はすべて任意です。
+          本日の数値でキントーンに日報を作成します（場所代は本日の会場設定から自動反映）。下の記入欄はすべて任意です。
         </p>
         <div className={styles.reportFields}>
-          <label className={styles.reportField}>
-            <span className={styles.reportLabel}>場所代</span>
-            <input
-              className={styles.reportInput}
-              type="text"
-              inputMode="numeric"
-              value={venueCost}
-              onChange={(e) => setVenueCost(e.target.value)}
-              placeholder="例: 5000（任意）"
-              maxLength={100}
-            />
-          </label>
           <label className={styles.reportField}>
             <span className={styles.reportLabel}>今日の気付き・戦略</span>
             <textarea
@@ -170,6 +202,14 @@ export function SalesPage() {
           </label>
         </div>
       </Modal>
+
+      <DailyVenueManager
+        open={managerOpen}
+        onClose={() => setManagerOpen(false)}
+        allVenues={allVenues}
+        current={todayVenues}
+        onChanged={reloadDaily}
+      />
 
       {data?.canUndo && (
         <div className={styles.undoBar}>

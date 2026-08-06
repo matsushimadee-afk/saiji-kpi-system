@@ -4,6 +4,7 @@ import type {
   DailyReportNotes,
   DailyReportResult,
   DailyStatsResponse,
+  DailyVenue,
   Department,
   Kpi,
   LoginRequest,
@@ -42,10 +43,18 @@ export const rosterApi = {
 
 // ---------------- キントーン日報連携 ----------------
 export const kintoneApi = {
-  submitDailyReport: (payload: { notes?: DailyReportNotes; venueCost?: string; date?: string }) =>
+  submitDailyReport: (payload: { notes?: DailyReportNotes; date?: string }) =>
     api
       .post<DailyReportResult>('/kintone/daily-report', payload)
       .then((r) => r.data),
+};
+
+// ---------------- 本日の会場（日次設定）----------------
+export const dailyVenueApi = {
+  list: (date?: string) => list<DailyVenue>('/daily-venues', { date }),
+  set: (venueId: number, cost: number | null, date?: string) =>
+    api.post<DailyVenue>('/daily-venues', { venueId, cost, date }).then((r) => r.data),
+  remove: (venueId: number, date?: string) => api.delete('/daily-venues', { params: { venueId, date } }),
 };
 
 // ---------------- KPI 入力 ----------------

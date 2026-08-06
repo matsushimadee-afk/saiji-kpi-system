@@ -3,6 +3,7 @@ import { db } from '../../config/database.js';
 import { env } from '../../config/env.js';
 import { AppError } from '../../utils/AppError.js';
 import { notifyDailyReport } from '../notify/dailyReportMail.js';
+import { getCost as getVenueCost } from '../dailyVenues/dailyVenues.service.js';
 
 /**
  * キントーン日報連携。
@@ -77,7 +78,6 @@ export async function submitDailyReport(
   user: AuthUser,
   date: string,
   notes?: DailyReportNotes,
-  venueCost?: string,
 ): Promise<DailyReportResult> {
   if (!isEnabled()) {
     throw new AppError(501, 'キントーン連携が未設定です', 'KINTONE_NOT_CONFIGURED');
@@ -142,11 +142,13 @@ export async function submitDailyReport(
     const f = field(NOTE_TO_KINTONE_LABEL[key]);
     if (f) record[f.code] = { value: text };
   }
-  // 場所代（アプリの提出画面で入力）
-  const cost = (venueCost ?? '').trim();
-  if (cost) {
-    const costF = field('場所代');
-    if (costF) record[costF.code] = { value: cost };
+  // 場所代（「本日の会場」でリーダーが設定した金額を自動反映。個人入力はしない）
+  if (last?.venue_id != null) {
+    const cost = await getVenueCost(date, last.venue_id);
+    if (cost != null) {
+      const costF = field('場所代');
+      if (costF) record[costF.code] = { value: String(cost) };
+    }
   }
 
   const res = await fetch(`${BASE()}/k/v1/record.json`, {

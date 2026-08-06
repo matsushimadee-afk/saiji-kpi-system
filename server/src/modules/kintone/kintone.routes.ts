@@ -20,7 +20,6 @@ kintoneRouter.post(
       roleplay: pick(rawNotes.roleplay),
       kpiThoughts: pick(rawNotes.kpiThoughts),
     };
-    const venueCost = pick(req.body?.venueCost);
-    res.json(await kintone.submitDailyReport(me, date, notes, venueCost));
+    res.json(await kintone.submitDailyReport(me, date, notes));
   }),
 );
