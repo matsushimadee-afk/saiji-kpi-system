@@ -83,7 +83,14 @@ export function SalesPage() {
     }
   };
 
+  // 会場が選ばれるまではカウント不可（場所代の付け漏れ・設定漏れを防ぐ）
+  const venueSelected = venueId != null;
+
   const handleAdd = (kpiId: number) => {
+    if (!venueSelected) {
+      toast.error('先に会場を選んでください');
+      return;
+    }
     void increment(kpiId).catch((err) => toast.error(getErrorMessage(err, '登録に失敗しました')));
   };
 
@@ -138,9 +145,29 @@ export function SalesPage() {
         </div>
       </div>
 
-      {/* 会場が複数あるのに未選択のときの案内 */}
-      {todayVenues.length > 1 && venueId == null && (
-        <div className="muted" style={{ fontSize: '0.85rem' }}>▲ 自分の会場を選んでからカウントしてください</div>
+      {/* 会場が未選択のあいだはカウント不可。理由に応じて案内を出す */}
+      {dailyLoaded && !venueSelected && (
+        <div className={styles.venueGate}>
+          {todayVenues.length === 0 ? (
+            canManageVenue ? (
+              <>
+                <b>本日の会場が未設定です。</b>
+                <span>「⚙ 会場設定」から今日の会場と場所代を登録してください。</span>
+                <Button variant="primary" size="sm" onClick={() => setManagerOpen(true)}>会場を設定する</Button>
+              </>
+            ) : (
+              <>
+                <b>本日の会場がまだ設定されていません。</b>
+                <span>リーダーが会場を設定するまでカウントできません。設定され次第、自動で選べるようになります。</span>
+              </>
+            )
+          ) : (
+            <>
+              <b>カウントの前に、自分がいる会場を選んでください。</b>
+              <span>上の「会場を選ぶ」から選択するとカウントできます。</span>
+            </>
+          )}
+        </div>
       )}
 
       {loading || !data ? (
@@ -149,7 +176,7 @@ export function SalesPage() {
         <>
           <div className={styles.grid}>
             {data.items.map((item) => (
-              <KpiButtonCard key={item.kpiId} item={item} onAdd={handleAdd} />
+              <KpiButtonCard key={item.kpiId} item={item} onAdd={handleAdd} disabled={!venueSelected} />
             ))}
           </div>
           {data.rates.length > 0 && <RatesPanel rates={data.rates} title="本日の転換率" />}

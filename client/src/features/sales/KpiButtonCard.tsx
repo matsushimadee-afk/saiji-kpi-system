@@ -8,14 +8,17 @@ import styles from './SalesPage.module.css';
 interface Props {
   item: KpiSummaryItem;
   onAdd: (kpiId: number) => void;
+  /** 会場未選択などでカウントを一時的に無効化する */
+  disabled?: boolean;
 }
 
 /** 大きな 1 タップ KPI ボタン (現在件数・目標・達成率・進捗バー付き) */
-export function KpiButtonCard({ item, onAdd }: Props) {
+export function KpiButtonCard({ item, onAdd, disabled = false }: Props) {
   const [bump, setBump] = useState(false);
   const color = item.color ?? 'var(--brand)';
 
   const handle = () => {
+    if (disabled) return;
     setBump(true);
     onAdd(item.kpiId);
     window.setTimeout(() => setBump(false), 450);
@@ -45,8 +48,9 @@ export function KpiButtonCard({ item, onAdd }: Props) {
 
       <button
         className={cx(styles.addBtn, bump && 'flash')}
-        style={{ background: color, ['--flash-color' as string]: color }}
+        style={{ background: color, ['--flash-color' as string]: color, opacity: disabled ? 0.4 : 1 }}
         onClick={handle}
+        disabled={disabled}
         aria-label={`${item.name}を1件追加`}
       >
         <span className={styles.plus}>＋</span>
