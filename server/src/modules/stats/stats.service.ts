@@ -462,3 +462,97 @@ export async function buildCsv(user: AuthUser, from: string, to: string): Promis
   const BOM = String.fromCharCode(0xfeff); // 先頭BOMでExcelの文字化けを防ぐ
   return BOM + lines.join('\r\n');
 }
+
+/**
+ * 場所代（担当別）CSV。会場の場所代を「その日その会場でカウントした人数」で頭割りし、
+ * 各担当に配分する。担当者ごとの合計＋日別明細の2段構成（Excel向けBOM付き）。
+ * 頭割りの分母（人数）は部署に関わらずその会場でカウントした実人数を用いる。
+ */
+export async function buildVenueCostCsv(user: AuthUser, from: string, to: string): Promise<string> {
+  const scope = resolveScope(user); // リーダー・責任者=自部署 / 管理者=全体（明細の対象担当を絞る）
+  const BOM = String.fromCharCode(0xfeff);
+
+  // 1) 会場×日 の場所代（cost 設定済みのみ）
+  const costRows = await db()('daily_venues')
+    .leftJoin('venues', 'daily_venues.venue_id', 'venues.id')
+    .where('daily_venues.entry_date', '>=', from)
+    .where('daily_venues.entry_date', '<=', to)
+    .whereNotNull('daily_venues.cost')
+    .select(
+      'daily_venues.entry_date as date',
+      'daily_venues.venue_id as venue_id',
+      'daily_venues.cost as cost',
+      'venues.name as venue',
+    );
+  const costMap = new Map<string, { cost: number; venue: string }>();
+  for (const r of costRows as any[]) {
+    costMap.set(`${toDateStr(r.date)}||${r.venue_id}`, { cost: Number(r.cost), venue: r.venue ?? '(未設定)' });
+  }
+  if (costMap.size === 0) {
+    return BOM + `場所代が設定された会場がこの期間（${from} 〜 ${to}）にありません\r\n`;
+  }
+
+  // 2) 会場×日 の人数（全担当・is_active）＝頭割りの分母
+  const headRows = await db()('kpi_entries')
+    .where('is_active', true)
+    .whereNotNull('venue_id')
+    .where('entry_date', '>=', from)
+    .where('entry_date', '<=', to)
+    .groupBy('entry_date', 'venue_id')
+    .select('entry_date as date', 'venue_id as venue_id')
+    .countDistinct({ headcount: 'user_id' });
+  const headMap = new Map<string, number>();
+  for (const r of headRows as any[]) {
+    headMap.set(`${toDateStr(r.date)}||${r.venue_id}`, Number(r.headcount));
+  }
+
+  // 3) 期間内の (日付×会場×担当) の組（明細対象はスコープで絞る）
+  let pairQ = db()('kpi_entries')
+    .join('users', 'kpi_entries.user_id', 'users.id')
+    .where('kpi_entries.is_active', true)
+    .whereNotNull('kpi_entries.venue_id')
+    .where('kpi_entries.entry_date', '>=', from)
+    .where('kpi_entries.entry_date', '<=', to);
+  if (scope.departmentId != null) pairQ = pairQ.where('kpi_entries.department_id', scope.departmentId);
+  const pairs = await pairQ.distinct(
+    'kpi_entries.entry_date as date',
+    'kpi_entries.venue_id as venue_id',
+    'users.display_name as uname',
+  );
+
+  // 4) 明細＆担当別合計を組み立てる
+  interface Detail { date: string; venue: string; cost: number; headcount: number; share: number; uname: string }
+  const details: Detail[] = [];
+  const totalByUser = new Map<string, number>();
+  for (const p of pairs as any[]) {
+    const date = toDateStr(p.date);
+    const key = `${date}||${p.venue_id}`;
+    const c = costMap.get(key);
+    if (!c) continue; // 場所代が設定されていない会場日はスキップ
+    const headcount = headMap.get(key) ?? 1;
+    const share = Math.round(c.cost / headcount);
+    const uname = p.uname ?? '(未設定)';
+    details.push({ date, venue: c.venue, cost: c.cost, headcount, share, uname });
+    totalByUser.set(uname, (totalByUser.get(uname) ?? 0) + share);
+  }
+
+  details.sort((a, b) =>
+    a.date < b.date ? -1 : a.date > b.date ? 1 : a.venue.localeCompare(b.venue, 'ja') || a.uname.localeCompare(b.uname, 'ja'),
+  );
+  const summary = [...totalByUser.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ja'));
+
+  const lines: string[] = [];
+  lines.push(csvCell(`場所代（担当別・頭割り）  期間 ${from} 〜 ${to}`));
+  lines.push('');
+  lines.push('■ 担当者ごとの場所代合計');
+  lines.push(['担当者', '場所代合計'].map(csvCell).join(','));
+  for (const [uname, total] of summary) lines.push([uname, String(total)].map(csvCell).join(','));
+  lines.push('');
+  lines.push('■ 日別明細（1人あたり = 会場の場所代 ÷ その日その会場の人数）');
+  lines.push(['日付', '会場', '会場の場所代', '人数', '1人あたり', '担当者'].map(csvCell).join(','));
+  for (const d of details) {
+    lines.push([d.date, d.venue, String(d.cost), String(d.headcount), String(d.share), d.uname].map(csvCell).join(','));
+  }
+
+  return BOM + lines.join('\r\n');
+}

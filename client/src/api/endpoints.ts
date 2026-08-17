@@ -81,17 +81,23 @@ export const statsApi = {
   trend: (params: RangeParams & { scope?: TrendScope; userId?: number }) =>
     api.get<TrendResponse>('/stats/trend', { params }).then((r) => r.data),
   /** CSVをダウンロードする（認証付きで取得しブラウザ保存） */
-  downloadCsv: async (params: RangeParams) => {
-    const res = await api.get('/stats/export.csv', { params, responseType: 'blob' });
-    const name = /filename="?([^"]+)"?/.exec(res.headers['content-disposition'] ?? '')?.[1] ?? 'kpi.csv';
-    const url = URL.createObjectURL(res.data as Blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = name;
-    a.click();
-    URL.revokeObjectURL(url);
-  },
+  downloadCsv: (params: RangeParams) => downloadCsvFrom('/stats/export.csv', params, 'kpi.csv'),
+  /** 場所代（担当別・頭割り）CSVをダウンロードする */
+  downloadVenueCostCsv: (params: RangeParams) =>
+    downloadCsvFrom('/stats/venue-cost.csv', params, 'venue_cost.csv'),
 };
+
+/** 認証付きでCSVを取得しブラウザ保存する共通処理 */
+async function downloadCsvFrom(path: string, params: RangeParams, fallbackName: string) {
+  const res = await api.get(path, { params, responseType: 'blob' });
+  const name = /filename="?([^"]+)"?/.exec(res.headers['content-disposition'] ?? '')?.[1] ?? fallbackName;
+  const url = URL.createObjectURL(res.data as Blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 // ---------------- マスタ ----------------
 export const kpiApi = {

@@ -66,3 +66,17 @@ statsRouter.get(
     res.send(csv);
   }),
 );
+
+// 場所代（担当別・頭割り）CSV 出力 (リーダー・責任者・管理者)
+statsRouter.get(
+  '/venue-cost.csv',
+  authorize(...DASHBOARD_ROLES),
+  asyncHandler(async (req, res) => {
+    const me = requireUser(req);
+    const { from, to } = resolveRange(req);
+    const csv = await stats.buildVenueCostCsv(me, from, to);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="venue_cost_${from}_${to}.csv"`);
+    res.send(csv);
+  }),
+);

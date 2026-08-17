@@ -17,20 +17,33 @@ export function DashboardPage() {
   const [tab, setTab] = useState<TabKey>('daily');
   const [date, setDate] = useState(todayStr());
   const [month, setMonth] = useState(currentMonthStr());
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState<'kpi' | 'venue' | null>(null);
 
   const scopeLabel = user.role === 'admin' ? '全社' : user.departmentName ?? '自部署';
 
+  const currentRange = () => (tab === 'daily' ? { from: date, to: date } : monthStartEnd(month));
+
   // 表示中の期間を CSV 出力する（デイリー=その日 / 当月=月初〜月末）
   const exportCsv = async () => {
-    setExporting(true);
+    setExporting('kpi');
     try {
-      const range = tab === 'daily' ? { from: date, to: date } : monthStartEnd(month);
-      await statsApi.downloadCsv(range);
+      await statsApi.downloadCsv(currentRange());
     } catch (err) {
       toast.error(getErrorMessage(err, 'CSV出力に失敗しました'));
     } finally {
-      setExporting(false);
+      setExporting(null);
+    }
+  };
+
+  // 表示中の期間の「場所代（担当別・頭割り）」CSVを出力する
+  const exportVenueCostCsv = async () => {
+    setExporting('venue');
+    try {
+      await statsApi.downloadVenueCostCsv(currentRange());
+    } catch (err) {
+      toast.error(getErrorMessage(err, '場所代CSVの出力に失敗しました'));
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -72,8 +85,11 @@ export function DashboardPage() {
               style={{ width: 'auto', height: 38 }}
             />
           )}
-          <Button variant="ghost" size="sm" onClick={exportCsv} disabled={exporting}>
-            {exporting ? '出力中…' : '⬇ CSV出力'}
+          <Button variant="ghost" size="sm" onClick={exportCsv} disabled={exporting !== null}>
+            {exporting === 'kpi' ? '出力中…' : '⬇ CSV出力'}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={exportVenueCostCsv} disabled={exporting !== null}>
+            {exporting === 'venue' ? '出力中…' : '⬇ 場所代CSV'}
           </Button>
         </div>
       </div>
