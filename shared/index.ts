@@ -80,6 +80,8 @@ export interface Venue {
   id: number;
   name: string;
   area: string | null;
+  /** 基本の場所代（円）。本日の会場設定時の初期値に使う。未設定は null */
+  cost: number | null;
   status: VenueStatus;
   displayOrder: number;
   createdAt: string;

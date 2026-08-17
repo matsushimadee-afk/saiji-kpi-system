@@ -4,12 +4,13 @@ import { venueApi } from '@/api/endpoints';
 import { getErrorMessage } from '@/api/client';
 import { Button, Field, Input, Modal, Select, Spinner, useToast } from '@/components/ui';
 import { matches } from '@/lib/search';
+import { formatNumber } from '@/lib/format';
 import { useList } from './useList';
 import styles from './Masters.module.css';
 
-type Draft = { name: string; area: string; status: 'active' | 'inactive'; displayOrder: number };
+type Draft = { name: string; area: string; cost: string; status: 'active' | 'inactive'; displayOrder: number };
 
-const emptyDraft = (order: number): Draft => ({ name: '', area: '', status: 'active', displayOrder: order });
+const emptyDraft = (order: number): Draft => ({ name: '', area: '', cost: '', status: 'active', displayOrder: order });
 
 export function VenueMaster() {
   const toast = useToast();
@@ -27,14 +28,20 @@ export function VenueMaster() {
     setEditing('new');
   };
   const openEdit = (v: Venue) => {
-    setDraft({ name: v.name, area: v.area ?? '', status: v.status, displayOrder: v.displayOrder });
+    setDraft({
+      name: v.name,
+      area: v.area ?? '',
+      cost: v.cost != null ? String(v.cost) : '',
+      status: v.status,
+      displayOrder: v.displayOrder,
+    });
     setEditing(v);
   };
 
   const save = async () => {
     setSaving(true);
     try {
-      const payload = { ...draft, area: draft.area || null };
+      const payload = { ...draft, area: draft.area || null, cost: draft.cost === '' ? null : Number(draft.cost) };
       if (editing === 'new') await venueApi.create(payload);
       else if (editing) await venueApi.update(editing.id, payload);
       toast.success('保存しました');
@@ -86,19 +93,21 @@ export function VenueMaster() {
                 <th>表示順</th>
                 <th>会場名</th>
                 <th>エリア</th>
+                <th>基本場所代</th>
                 <th>状態</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={5} className="muted center" style={{ padding: 'var(--space-6)' }}>該当する会場がありません</td></tr>
+                <tr><td colSpan={6} className="muted center" style={{ padding: 'var(--space-6)' }}>該当する会場がありません</td></tr>
               )}
               {filtered.map((v) => (
                 <tr key={v.id}>
                   <td className="tabular">{v.displayOrder}</td>
                   <td>{v.name}</td>
                   <td className="muted">{v.area ?? '—'}</td>
+                  <td className="tabular">{v.cost != null ? `${formatNumber(v.cost)}円` : '—'}</td>
                   <td>
                     <span className={v.status === 'active' ? `${styles.tag} ${styles['tag--on']}` : `${styles.tag} ${styles['tag--off']}`}>
                       {v.status === 'active' ? '稼働' : '停止'}
@@ -136,6 +145,15 @@ export function VenueMaster() {
           </Field>
           <Field label="エリア">
             <Input value={draft.area} onChange={(e) => setDraft({ ...draft, area: e.target.value })} placeholder="例: 首都圏" />
+          </Field>
+          <Field label="基本の場所代（円）">
+            <Input
+              type="number"
+              inputMode="numeric"
+              value={draft.cost}
+              onChange={(e) => setDraft({ ...draft, cost: e.target.value })}
+              placeholder="例: 15000（本日の会場設定の初期値になります）"
+            />
           </Field>
           <Field label="表示順">
             <Input type="number" value={draft.displayOrder} onChange={(e) => setDraft({ ...draft, displayOrder: Number(e.target.value) })} />

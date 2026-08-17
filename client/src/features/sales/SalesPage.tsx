@@ -37,10 +37,14 @@ export function SalesPage() {
     });
   };
 
+  const reloadAllVenues = () => {
+    if (canManageVenue) void venueApi.list(true).then(setAllVenues);
+  };
+
   useEffect(() => {
     reloadDaily();
     void authApi.config().then((c) => setKintoneEnabled(c.kintoneEnabled)).catch(() => {});
-    if (canManageVenue) void venueApi.list(true).then(setAllVenues);
+    reloadAllVenues();
   }, [canManageVenue]);
 
   // リーダー・責任者・管理者: 本日の会場が未設定なら、その日の初回アクセス時に設定ポップアップを自動表示（1日1回）
@@ -250,6 +254,7 @@ export function SalesPage() {
         allVenues={allVenues}
         current={todayVenues}
         onChanged={reloadDaily}
+        onVenuesChanged={reloadAllVenues}
       />
 
       {data?.canUndo && (

@@ -10,6 +10,7 @@ import * as venues from './venues.service.js';
 const createSchema = z.object({
   name: z.string().min(1),
   area: z.string().nullable().optional(),
+  cost: z.number().int().min(0).nullable().optional(),
   status: z.enum(['active', 'inactive']).optional(),
   displayOrder: z.number().int().optional(),
 });

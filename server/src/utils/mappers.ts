@@ -60,6 +60,7 @@ export function mapVenue(r: any): Venue {
     id: r.id,
     name: r.name,
     area: r.area ?? null,
+    cost: r.cost ?? null,
     status: r.status,
     displayOrder: r.display_order,
     createdAt: r.created_at,

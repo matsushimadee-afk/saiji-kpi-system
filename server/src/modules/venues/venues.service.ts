@@ -13,6 +13,7 @@ export async function listVenues(onlyActive = false): Promise<Venue[]> {
 export async function createVenue(input: {
   name: string;
   area?: string | null;
+  cost?: number | null;
   status?: string;
   displayOrder?: number;
 }): Promise<Venue> {
@@ -20,6 +21,7 @@ export async function createVenue(input: {
     db()('venues').insert({
       name: input.name,
       area: input.area ?? null,
+      cost: input.cost ?? null,
       status: input.status ?? 'active',
       display_order: input.displayOrder ?? 0,
     }),
@@ -29,11 +31,12 @@ export async function createVenue(input: {
 
 export async function updateVenue(
   id: number,
-  input: Partial<{ name: string; area: string | null; status: string; displayOrder: number }>,
+  input: Partial<{ name: string; area: string | null; cost: number | null; status: string; displayOrder: number }>,
 ): Promise<Venue> {
   const patch: Record<string, unknown> = { updated_at: db().fn.now() };
   if (input.name !== undefined) patch.name = input.name;
   if (input.area !== undefined) patch.area = input.area;
+  if (input.cost !== undefined) patch.cost = input.cost;
   if (input.status !== undefined) patch.status = input.status;
   if (input.displayOrder !== undefined) patch.display_order = input.displayOrder;
   const affected = await db()('venues').where({ id }).update(patch);

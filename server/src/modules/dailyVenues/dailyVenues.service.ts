@@ -33,11 +33,17 @@ export async function upsert(
   cost: number | null,
   createdBy: number,
 ): Promise<DailyVenue> {
+  // 金額が未指定なら会場マスタの基本場所代を初期値として使う
+  let finalCost = cost;
+  if (finalCost == null) {
+    const v = await db()('venues').where({ id: venueId }).first();
+    finalCost = v?.cost ?? null;
+  }
   const existing = await db()('daily_venues').where({ entry_date: date, venue_id: venueId }).first();
   if (existing) {
-    await db()('daily_venues').where({ id: existing.id }).update({ cost, updated_at: db().fn.now() });
+    await db()('daily_venues').where({ id: existing.id }).update({ cost: finalCost, updated_at: db().fn.now() });
   } else {
-    await insertId(db()('daily_venues').insert({ entry_date: date, venue_id: venueId, cost, created_by: createdBy }));
+    await insertId(db()('daily_venues').insert({ entry_date: date, venue_id: venueId, cost: finalCost, created_by: createdBy }));
   }
   const row = await db()('daily_venues as dv')
     .join('venues as v', 'dv.venue_id', 'v.id')
