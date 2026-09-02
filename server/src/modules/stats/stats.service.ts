@@ -463,14 +463,26 @@ export async function buildCsv(user: AuthUser, from: string, to: string): Promis
   return BOM + lines.join('\r\n');
 }
 
+interface VenueCostDetail {
+  date: string;
+  venue: string;
+  cost: number;
+  headcount: number;
+  share: number;
+  uname: string;
+}
+
 /**
- * 場所代（担当別）CSV。会場の場所代を「その日その会場でカウントした人数」で頭割りし、
- * 各担当に配分する。担当者ごとの合計＋日別明細の2段構成（Excel向けBOM付き）。
- * 頭割りの分母（人数）は部署に関わらずその会場でカウントした実人数を用いる。
+ * 場所代（頭割り）の集計。会場の場所代を「その日その会場でカウントした実人数」で頭割りし、
+ * 各担当に配分する。頭割りの分母（人数）は部署に関わらずその会場でカウントした実人数を用いる。
+ * 明細の対象担当はスコープ（リーダー・責任者=自部署 / 管理者=全体）で絞る。
  */
-export async function buildVenueCostCsv(user: AuthUser, from: string, to: string): Promise<string> {
-  const scope = resolveScope(user); // リーダー・責任者=自部署 / 管理者=全体（明細の対象担当を絞る）
-  const BOM = String.fromCharCode(0xfeff);
+async function computeVenueCost(
+  user: AuthUser,
+  from: string,
+  to: string,
+): Promise<{ summary: Array<[string, number]>; details: VenueCostDetail[] }> {
+  const scope = resolveScope(user);
 
   // 1) 会場×日 の場所代（cost 設定済みのみ）
   const costRows = await db()('daily_venues')
@@ -488,9 +500,7 @@ export async function buildVenueCostCsv(user: AuthUser, from: string, to: string
   for (const r of costRows as any[]) {
     costMap.set(`${toDateStr(r.date)}||${r.venue_id}`, { cost: Number(r.cost), venue: r.venue ?? '(未設定)' });
   }
-  if (costMap.size === 0) {
-    return BOM + `場所代が設定された会場がこの期間（${from} 〜 ${to}）にありません\r\n`;
-  }
+  if (costMap.size === 0) return { summary: [], details: [] };
 
   // 2) 会場×日 の人数（全担当・is_active）＝頭割りの分母
   const headRows = await db()('kpi_entries')
@@ -521,8 +531,7 @@ export async function buildVenueCostCsv(user: AuthUser, from: string, to: string
   );
 
   // 4) 明細＆担当別合計を組み立てる
-  interface Detail { date: string; venue: string; cost: number; headcount: number; share: number; uname: string }
-  const details: Detail[] = [];
+  const details: VenueCostDetail[] = [];
   const totalByUser = new Map<string, number>();
   for (const p of pairs as any[]) {
     const date = toDateStr(p.date);
@@ -540,19 +549,25 @@ export async function buildVenueCostCsv(user: AuthUser, from: string, to: string
     a.date < b.date ? -1 : a.date > b.date ? 1 : a.venue.localeCompare(b.venue, 'ja') || a.uname.localeCompare(b.uname, 'ja'),
   );
   const summary = [...totalByUser.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ja'));
+  return { summary, details };
+}
 
-  const lines: string[] = [];
-  lines.push(csvCell(`場所代（担当別・頭割り）  期間 ${from} 〜 ${to}`));
-  lines.push('');
-  lines.push('■ 担当者ごとの場所代合計');
-  lines.push(['担当者', '場所代合計'].map(csvCell).join(','));
+const BOM = String.fromCharCode(0xfeff); // 先頭BOMでExcel/Power Queryの文字化けを防ぐ
+
+/** 場所代CSV（担当者ごと合計）: ヘッダー行＋データのみ。列= 担当者, 場所代合計 */
+export async function buildVenueCostSummaryCsv(user: AuthUser, from: string, to: string): Promise<string> {
+  const { summary } = await computeVenueCost(user, from, to);
+  const lines = [['担当者', '場所代合計'].map(csvCell).join(',')];
   for (const [uname, total] of summary) lines.push([uname, String(total)].map(csvCell).join(','));
-  lines.push('');
-  lines.push('■ 日別明細（1人あたり = 会場の場所代 ÷ その日その会場の人数）');
-  lines.push(['日付', '会場', '会場の場所代', '人数', '1人あたり', '担当者'].map(csvCell).join(','));
+  return BOM + lines.join('\r\n');
+}
+
+/** 場所代CSV（日別明細）: ヘッダー行＋データのみ。列= 日付, 会場, 会場の場所代, 人数, 1人あたり, 担当者 */
+export async function buildVenueCostDetailCsv(user: AuthUser, from: string, to: string): Promise<string> {
+  const { details } = await computeVenueCost(user, from, to);
+  const lines = [['日付', '会場', '会場の場所代', '人数', '1人あたり', '担当者'].map(csvCell).join(',')];
   for (const d of details) {
     lines.push([d.date, d.venue, String(d.cost), String(d.headcount), String(d.share), d.uname].map(csvCell).join(','));
   }
-
   return BOM + lines.join('\r\n');
 }

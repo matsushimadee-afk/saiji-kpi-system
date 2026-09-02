@@ -17,7 +17,7 @@ export function DashboardPage() {
   const [tab, setTab] = useState<TabKey>('daily');
   const [date, setDate] = useState(todayStr());
   const [month, setMonth] = useState(currentMonthStr());
-  const [exporting, setExporting] = useState<'kpi' | 'venue' | null>(null);
+  const [exporting, setExporting] = useState<'kpi' | 'venueSummary' | 'venueDetail' | null>(null);
 
   const scopeLabel = user.role === 'admin' ? '全社' : user.departmentName ?? '自部署';
 
@@ -35,11 +35,12 @@ export function DashboardPage() {
     }
   };
 
-  // 表示中の期間の「場所代（担当別・頭割り）」CSVを出力する
-  const exportVenueCostCsv = async () => {
-    setExporting('venue');
+  // 場所代CSV（担当者ごと合計 / 日別明細）を出力する
+  const exportVenueCost = async (kind: 'venueSummary' | 'venueDetail') => {
+    setExporting(kind);
     try {
-      await statsApi.downloadVenueCostCsv(currentRange());
+      if (kind === 'venueSummary') await statsApi.downloadVenueCostSummaryCsv(currentRange());
+      else await statsApi.downloadVenueCostDetailCsv(currentRange());
     } catch (err) {
       toast.error(getErrorMessage(err, '場所代CSVの出力に失敗しました'));
     } finally {
@@ -88,8 +89,11 @@ export function DashboardPage() {
           <Button variant="ghost" size="sm" onClick={exportCsv} disabled={exporting !== null}>
             {exporting === 'kpi' ? '出力中…' : '⬇ CSV出力'}
           </Button>
-          <Button variant="ghost" size="sm" onClick={exportVenueCostCsv} disabled={exporting !== null}>
-            {exporting === 'venue' ? '出力中…' : '⬇ 場所代CSV'}
+          <Button variant="ghost" size="sm" onClick={() => exportVenueCost('venueSummary')} disabled={exporting !== null}>
+            {exporting === 'venueSummary' ? '出力中…' : '⬇ 場所代（担当別合計）'}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => exportVenueCost('venueDetail')} disabled={exporting !== null}>
+            {exporting === 'venueDetail' ? '出力中…' : '⬇ 場所代（日別明細）'}
           </Button>
         </div>
       </div>

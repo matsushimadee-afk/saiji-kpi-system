@@ -82,9 +82,12 @@ export const statsApi = {
     api.get<TrendResponse>('/stats/trend', { params }).then((r) => r.data),
   /** CSVをダウンロードする（認証付きで取得しブラウザ保存） */
   downloadCsv: (params: RangeParams) => downloadCsvFrom('/stats/export.csv', params, 'kpi.csv'),
-  /** 場所代（担当別・頭割り）CSVをダウンロードする */
-  downloadVenueCostCsv: (params: RangeParams) =>
-    downloadCsvFrom('/stats/venue-cost.csv', params, 'venue_cost.csv'),
+  /** 場所代CSV（担当者ごと合計・頭割り）をダウンロードする */
+  downloadVenueCostSummaryCsv: (params: RangeParams) =>
+    downloadCsvFrom('/stats/venue-cost-summary.csv', params, 'venue_cost_summary.csv'),
+  /** 場所代CSV（日別明細・頭割り）をダウンロードする */
+  downloadVenueCostDetailCsv: (params: RangeParams) =>
+    downloadCsvFrom('/stats/venue-cost-detail.csv', params, 'venue_cost_detail.csv'),
 };
 
 /** 認証付きでCSVを取得しブラウザ保存する共通処理 */

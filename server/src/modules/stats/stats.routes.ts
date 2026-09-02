@@ -67,16 +67,30 @@ statsRouter.get(
   }),
 );
 
-// 場所代（担当別・頭割り）CSV 出力 (リーダー・責任者・管理者)
+// 場所代CSV（担当者ごと合計・頭割り） (リーダー・責任者・管理者)
 statsRouter.get(
-  '/venue-cost.csv',
+  '/venue-cost-summary.csv',
   authorize(...DASHBOARD_ROLES),
   asyncHandler(async (req, res) => {
     const me = requireUser(req);
     const { from, to } = resolveRange(req);
-    const csv = await stats.buildVenueCostCsv(me, from, to);
+    const csv = await stats.buildVenueCostSummaryCsv(me, from, to);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="venue_cost_${from}_${to}.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="venue_cost_summary_${from}_${to}.csv"`);
+    res.send(csv);
+  }),
+);
+
+// 場所代CSV（日別明細・頭割り） (リーダー・責任者・管理者)
+statsRouter.get(
+  '/venue-cost-detail.csv',
+  authorize(...DASHBOARD_ROLES),
+  asyncHandler(async (req, res) => {
+    const me = requireUser(req);
+    const { from, to } = resolveRange(req);
+    const csv = await stats.buildVenueCostDetailCsv(me, from, to);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="venue_cost_detail_${from}_${to}.csv"`);
     res.send(csv);
   }),
 );
