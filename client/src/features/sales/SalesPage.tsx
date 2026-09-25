@@ -41,6 +41,18 @@ export function SalesPage() {
     if (canManageVenue) void venueApi.list(true).then(setAllVenues);
   };
 
+  // 当日選んだ会場を「日付×担当者」で記憶。再ログインでも選び直し不要にする。
+  const venueMemoKey = `venueChoice_${todayStr()}_${user.id}`;
+  const chooseVenue = (v: number | null) => {
+    setVenueId(v);
+    try {
+      if (v != null) localStorage.setItem(venueMemoKey, String(v));
+      else localStorage.removeItem(venueMemoKey);
+    } catch {
+      /* localStorageが使えなくても動作は継続 */
+    }
+  };
+
   useEffect(() => {
     reloadDaily();
     void authApi.config().then((c) => setKintoneEnabled(c.kintoneEnabled)).catch(() => {});
@@ -57,13 +69,22 @@ export function SalesPage() {
     setManagerOpen(true);
   }, [dailyLoaded, canManageVenue, todayVenues]);
 
-  // 本日の会場に合わせて自分の会場を自動調整（1つなら自動選択、選択中が無ければ解除）
+  // 本日の会場に合わせて自分の会場を自動調整
+  // （1つなら自動選択 / 選択中がまだ有効ならそのまま / 当日すでに選んだ会場があれば復元 / それ以外は未選択）
   useEffect(() => {
     setVenueId((prev) => {
       if (todayVenues.length === 1) return todayVenues[0].venueId;
       if (prev != null && todayVenues.some((v) => v.venueId === prev)) return prev;
+      try {
+        const saved = Number(localStorage.getItem(venueMemoKey));
+        if (saved && todayVenues.some((v) => v.venueId === saved)) return saved;
+      } catch {
+        /* noop */
+      }
       return null;
     });
+    // venueMemoKey は日付×ユーザーで安定のため依存に含めない
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [todayVenues]);
 
   const selectedVenue = useMemo(
@@ -131,7 +152,7 @@ export function SalesPage() {
           ) : (
             <Select
               value={venueId ?? ''}
-              onChange={(e) => setVenueId(e.target.value ? Number(e.target.value) : null)}
+              onChange={(e) => chooseVenue(e.target.value ? Number(e.target.value) : null)}
               style={{ width: 'auto', minWidth: 150, height: 38 }}
             >
               <option value="">会場を選ぶ</option>

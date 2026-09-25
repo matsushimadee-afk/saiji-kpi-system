@@ -19,6 +19,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-09-25',
+    title: '会場の選び直しが不要に',
+    tags: ['改善'],
+    items: [
+      '一度その日の会場を選べば、同じ日のうちは再ログインしても自動でその会場が選ばれるようになりました（毎回選び直す必要がなくなりました）。会場は日ごとに変わるため、翌日は改めて選択します。',
+    ],
+  },
+  {
     date: '2026-08-06',
     title: '「本日の会場」と場所代の管理を追加',
     tags: ['NEW'],
