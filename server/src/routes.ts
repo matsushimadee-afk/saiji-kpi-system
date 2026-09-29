@@ -11,6 +11,7 @@ import { rosterRouter } from './modules/roster/roster.routes.js';
 import { ratesRouter } from './modules/rates/rates.routes.js';
 import { kintoneRouter } from './modules/kintone/kintone.routes.js';
 import { dailyVenuesRouter } from './modules/dailyVenues/dailyVenues.routes.js';
+import { attendanceRouter } from './modules/attendance/attendance.routes.js';
 
 /** すべての API ルートを /api 配下に集約する */
 export const apiRouter = Router();
@@ -27,3 +28,4 @@ apiRouter.use('/stats', statsRouter);
 apiRouter.use('/roster', rosterRouter); // 名簿(Googleシート)同期
 apiRouter.use('/kintone', kintoneRouter); // キントーン日報連携
 apiRouter.use('/daily-venues', dailyVenuesRouter); // 本日の会場（日次設定）
+apiRouter.use('/attendance', attendanceRouter); // 出席（場所代の頭割り修正）

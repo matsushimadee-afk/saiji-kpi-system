@@ -502,46 +502,51 @@ async function computeVenueCost(
   }
   if (costMap.size === 0) return { summary: [], details: [] };
 
-  // 2) 会場×日 の人数（全担当・is_active）＝頭割りの分母
-  const headRows = await db()('kpi_entries')
+  // 2) 出席者 = KPI入力者 ∪ 手動出席(venue_attendance) の (日付×会場×担当) 集合
+  const kpiRows = await db()('kpi_entries')
     .where('is_active', true)
     .whereNotNull('venue_id')
     .where('entry_date', '>=', from)
     .where('entry_date', '<=', to)
-    .groupBy('entry_date', 'venue_id')
-    .select('entry_date as date', 'venue_id as venue_id')
-    .countDistinct({ headcount: 'user_id' });
-  const headMap = new Map<string, number>();
-  for (const r of headRows as any[]) {
-    headMap.set(`${toDateStr(r.date)}||${r.venue_id}`, Number(r.headcount));
-  }
-
-  // 3) 期間内の (日付×会場×担当) の組（明細対象はスコープで絞る）
-  let pairQ = db()('kpi_entries')
-    .join('users', 'kpi_entries.user_id', 'users.id')
-    .where('kpi_entries.is_active', true)
-    .whereNotNull('kpi_entries.venue_id')
-    .where('kpi_entries.entry_date', '>=', from)
-    .where('kpi_entries.entry_date', '<=', to);
-  if (scope.departmentId != null) pairQ = pairQ.where('kpi_entries.department_id', scope.departmentId);
-  const pairs = await pairQ.distinct(
-    'kpi_entries.entry_date as date',
-    'kpi_entries.venue_id as venue_id',
-    'users.display_name as uname',
+    .distinct('entry_date as date', 'venue_id as venue_id', 'user_id as user_id');
+  const attRows = await db()('venue_attendance')
+    .where('entry_date', '>=', from)
+    .where('entry_date', '<=', to)
+    .select('entry_date as date', 'venue_id as venue_id', 'user_id as user_id');
+  const users = await db()('users').select('id', 'display_name', 'department_id');
+  const userMap = new Map<number, { name: string; dept: number | null }>(
+    (users as any[]).map((u) => [u.id, { name: u.display_name, dept: u.department_id ?? null }]),
   );
 
-  // 4) 明細＆担当別合計を組み立てる
+  // (日付×会場×担当) をユニオン（KPI入力と手動出席の重複は自動で除外）
+  const attend = new Map<string, { date: string; venueId: number; userId: number }>();
+  for (const r of [...(kpiRows as any[]), ...(attRows as any[])]) {
+    if (r.venue_id == null || r.user_id == null) continue;
+    const date = toDateStr(r.date);
+    attend.set(`${date}||${r.venue_id}||${r.user_id}`, { date, venueId: r.venue_id, userId: r.user_id });
+  }
+
+  // 頭割りの分母（部署に関わらず、その会場にいた実人数）
+  const headMap = new Map<string, number>();
+  for (const a of attend.values()) {
+    const k = `${a.date}||${a.venueId}`;
+    headMap.set(k, (headMap.get(k) ?? 0) + 1);
+  }
+
+  // 明細＆担当別合計（cost設定あり & 出力対象はスコープで絞る。頭数には全員含む）
   const details: VenueCostDetail[] = [];
   const totalByUser = new Map<string, number>();
-  for (const p of pairs as any[]) {
-    const date = toDateStr(p.date);
-    const key = `${date}||${p.venue_id}`;
+  for (const a of attend.values()) {
+    const key = `${a.date}||${a.venueId}`;
     const c = costMap.get(key);
-    if (!c) continue; // 場所代が設定されていない会場日はスキップ
+    if (!c) continue; // 場所代が未設定の会場日はスキップ
+    const u = userMap.get(a.userId);
+    if (!u) continue;
+    if (scope.departmentId != null && u.dept !== scope.departmentId) continue; // スコープ外は出力しない
     const headcount = headMap.get(key) ?? 1;
     const share = Math.round(c.cost / headcount);
-    const uname = p.uname ?? '(未設定)';
-    details.push({ date, venue: c.venue, cost: c.cost, headcount, share, uname });
+    const uname = u.name ?? '(未設定)';
+    details.push({ date: a.date, venue: c.venue, cost: c.cost, headcount, share, uname });
     totalByUser.set(uname, (totalByUser.get(uname) ?? 0) + share);
   }
 

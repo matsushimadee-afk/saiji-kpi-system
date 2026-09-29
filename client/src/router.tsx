@@ -13,6 +13,7 @@ import { UserMaster } from '@/features/masters/UserMaster';
 import { KpiMaster } from '@/features/masters/KpiMaster';
 import { RateMaster } from '@/features/masters/RateMaster';
 import { VenueMaster } from '@/features/masters/VenueMaster';
+import { AttendanceEditor } from '@/features/masters/AttendanceEditor';
 import { OrgMaster } from '@/features/masters/OrgMaster';
 import { TargetMaster } from '@/features/masters/TargetMaster';
 import { DataManagement } from '@/features/masters/DataManagement';
@@ -53,6 +54,7 @@ export const router = createBrowserRouter([
                   { path: 'kpis', element: <KpiMaster /> },
                   { path: 'rates', element: <RateMaster /> },
                   { path: 'venues', element: <VenueMaster /> },
+                  { path: 'attendance', element: <AttendanceEditor /> },
                   { path: 'org', element: <OrgMaster /> },
                   { path: 'targets', element: <TargetMaster /> },
                   // データリセットは取り返しがつかないため管理者のみ

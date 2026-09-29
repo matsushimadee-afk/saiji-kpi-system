@@ -99,6 +99,25 @@ export interface DailyVenue {
   createdAt: string;
 }
 
+/** 出席（場所代の頭割り対象）: その日その会場にいた担当者。source= kpi:入力あり / manual:手動追加 / both:両方 */
+export interface AttendanceMember {
+  userId: number;
+  name: string;
+  source: 'kpi' | 'manual' | 'both';
+}
+export interface AttendanceVenue {
+  venueId: number;
+  venueName: string;
+  cost: number | null;
+  members: AttendanceMember[];
+}
+export interface DateAttendance {
+  date: string;
+  venues: AttendanceVenue[];
+  /** チェックリスト用の全メンバー（有効・管理者以外） */
+  allMembers: { id: number; name: string }[];
+}
+
 /** 転換率（数値項目）: 分子KPI ÷ 分母KPI で自動計算する指標 */
 export interface RateMetric {
   id: number;

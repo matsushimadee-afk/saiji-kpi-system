@@ -15,6 +15,7 @@ const SUB_NAV: SubNavItem[] = [
   { to: 'kpis', label: 'KPI' },
   { to: 'rates', label: '転換率' },
   { to: 'venues', label: '会場' },
+  { to: 'attendance', label: '場所代修正' },
   { to: 'org', label: '部署・チーム' },
   { to: 'targets', label: '目標' },
   { to: 'data', label: 'データ管理', adminOnly: true },

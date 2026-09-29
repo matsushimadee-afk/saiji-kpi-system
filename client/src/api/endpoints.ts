@@ -1,4 +1,5 @@
 import type {
+  DateAttendance,
   AuthConfig,
   CreateEntryRequest,
   DailyReportNotes,
@@ -55,6 +56,15 @@ export const dailyVenueApi = {
   set: (venueId: number, cost: number | null, date?: string) =>
     api.post<DailyVenue>('/daily-venues', { venueId, cost, date }).then((r) => r.data),
   remove: (venueId: number, date?: string) => api.delete('/daily-venues', { params: { venueId, date } }),
+};
+
+// ---------------- 出席（場所代の頭割り修正）----------------
+export const attendanceApi = {
+  byDate: (date: string) => api.get<DateAttendance>('/attendance', { params: { date } }).then((r) => r.data),
+  add: (date: string, venueId: number, userId: number) =>
+    api.post('/attendance', { date, venueId, userId }).then((r) => r.data),
+  remove: (date: string, venueId: number, userId: number) =>
+    api.delete('/attendance', { params: { date, venueId, userId } }),
 };
 
 // ---------------- KPI 入力 ----------------
