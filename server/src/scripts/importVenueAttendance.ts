@@ -21,7 +21,6 @@ const RECORDS: Array<[string, string, string]> = [
   ['松勢海努', '2026-09-23', 'イオンモール今治'],
   ['松勢海努', '2026-09-26', 'イオンモール姫路大津'],
   ['松勢海努', '2026-09-27', 'イオンモール姫路大津'],
-  ['村上紗香', '2026-09-02', 'フレンドタウン交野'],
   ['村上紗香', '2026-09-06', 'アルプラザ香里園'],
   ['村上紗香', '2026-09-15', 'MEGAドンキ名張'],
   ['村上紗香', '2026-09-17', 'MEGAドンキ名張'],
@@ -30,6 +29,12 @@ const RECORDS: Array<[string, string, string]> = [
   ['村上紗香', '2026-09-22', 'イオンモール今治'],
   ['村上紗香', '2026-09-23', 'イオンモール今治'],
   ['村上紗香', '2026-09-26', 'イオンモール姫路大津'],
+];
+
+// 入力あり・会場が分かれてしまった分を1会場に寄せ替える（担当×日付の全アクティブ入力を対象会場へ統一）
+// [担当者, 日付, 統一先の会場名]
+const CONSOLIDATE: Array<[string, string, string]> = [
+  ['村上紗香', '2026-09-02', 'フレンドタウン交野'], // 9/2に2会場を選択→フレンドタウン交野へ統一
 ];
 
 async function main(): Promise<void> {
@@ -49,6 +54,29 @@ async function main(): Promise<void> {
   let added = 0;
   let already = 0;
 
+  // (A) 会場が分かれた入力を1会場に寄せ替え（既存入力のvenue_idを統一）
+  for (const [name, date, venueName] of CONSOLIDATE) {
+    const userId = userByName.get(name);
+    const venue = venueByName.get(venueName);
+    if (!userId) { missingUsers.add(name); console.log(`  NG 担当者未登録: ${name}  (寄せ替え ${date} ${venueName})`); continue; }
+    if (!venue) { missingVenues.add(venueName); console.log(`  NG 会場未登録: ${venueName}  (寄せ替え ${date} ${name})`); continue; }
+    const dv = await db()('daily_venues').where({ entry_date: date, venue_id: venue.id }).first();
+    if (!dv) {
+      if (venue.cost == null) needCost.add(`${date} ${venueName}`);
+      if (apply) await insertId(db()('daily_venues').insert({ entry_date: date, venue_id: venue.id, cost: venue.cost, created_by: null }));
+    } else if (dv.cost == null) {
+      needCost.add(`${date} ${venueName}`);
+    }
+    const rows = await db()('kpi_entries').where({ user_id: userId, entry_date: date, is_active: true });
+    const total = (rows as any[]).length;
+    const wrong = (rows as any[]).filter((r) => r.venue_id !== venue.id).length;
+    console.log(`  ${apply ? '寄せ替え' : '寄せ替え予定'}: ${date} ${name} の入力${total}件 → 会場「${venueName}」に統一（変更 ${wrong}件）`);
+    if (apply && wrong > 0) {
+      await db()('kpi_entries').where({ user_id: userId, entry_date: date, is_active: true }).update({ venue_id: venue.id });
+    }
+  }
+
+  // (B) 入力漏れ分の出席を追加
   for (const [name, date, venueName] of RECORDS) {
     const userId = userByName.get(name);
     const venue = venueByName.get(venueName);
