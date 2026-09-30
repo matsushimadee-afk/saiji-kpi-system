@@ -22,35 +22,20 @@ attendanceRouter.get(
   }),
 );
 
-const upsertSchema = z.object({
+const setSchema = z.object({
   date: z.string().refine(isValidDate, '日付が不正です'),
   venueId: z.number().int(),
   userId: z.number().int(),
+  present: z.boolean(),
 });
 
-// 出席を追加
+// 出席状態を設定（present=true:含める / false:外す）
 attendanceRouter.post(
   '/',
   asyncHandler(async (req, res) => {
     const me = requireUser(req);
-    const { date, venueId, userId } = parse(upsertSchema, req.body);
-    await attendance.addAttendance(date, venueId, userId, me.id);
-    res.status(201).json({ ok: true });
-  }),
-);
-
-// 手動出席を削除（クエリ: date, venueId, userId）
-attendanceRouter.delete(
-  '/',
-  asyncHandler(async (req, res) => {
-    const date = typeof req.query.date === 'string' ? req.query.date : '';
-    const venueId = Number(req.query.venueId);
-    const userId = Number(req.query.userId);
-    if (!isValidDate(date) || !venueId || !userId) {
-      res.status(400).json({ error: 'パラメータが不正です' });
-      return;
-    }
-    await attendance.removeAttendance(date, venueId, userId);
-    res.status(204).end();
+    const { date, venueId, userId, present } = parse(setSchema, req.body);
+    await attendance.setAttendance(date, venueId, userId, present, me.id);
+    res.status(200).json({ ok: true });
   }),
 );

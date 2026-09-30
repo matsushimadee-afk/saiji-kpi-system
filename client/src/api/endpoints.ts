@@ -61,10 +61,9 @@ export const dailyVenueApi = {
 // ---------------- 出席（場所代の頭割り修正）----------------
 export const attendanceApi = {
   byDate: (date: string) => api.get<DateAttendance>('/attendance', { params: { date } }).then((r) => r.data),
-  add: (date: string, venueId: number, userId: number) =>
-    api.post('/attendance', { date, venueId, userId }).then((r) => r.data),
-  remove: (date: string, venueId: number, userId: number) =>
-    api.delete('/attendance', { params: { date, venueId, userId } }),
+  /** present=true:場所代の対象に含める / false:外す */
+  set: (date: string, venueId: number, userId: number, present: boolean) =>
+    api.post('/attendance', { date, venueId, userId, present }).then((r) => r.data),
 };
 
 // ---------------- KPI 入力 ----------------

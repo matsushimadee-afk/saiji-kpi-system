@@ -99,16 +99,22 @@ export interface DailyVenue {
   createdAt: string;
 }
 
-/** 出席（場所代の頭割り対象）: その日その会場にいた担当者。source= kpi:入力あり / manual:手動追加 / both:両方 */
+/**
+ * 出席（場所代の頭割り対象）の状態。
+ * present=true の担当者が頭割り対象。hasKpi=その会場でKPI入力があるか（バッジ表示用）。
+ * KPI入力があっても present=false にすれば対象から外せる（会場ミスの除外）。
+ */
 export interface AttendanceMember {
   userId: number;
   name: string;
-  source: 'kpi' | 'manual' | 'both';
+  present: boolean;
+  hasKpi: boolean;
 }
 export interface AttendanceVenue {
   venueId: number;
   venueName: string;
   cost: number | null;
+  /** 状態のある担当者（KPI入力あり or 手動上書きあり）。ここに無い人は未出席・入力なし。 */
   members: AttendanceMember[];
 }
 export interface DateAttendance {

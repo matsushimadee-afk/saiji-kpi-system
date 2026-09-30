@@ -44,11 +44,10 @@ export function AttendanceEditor() {
     void venueApi.list(true).then(setAllVenues).catch(() => {});
   }, []);
 
-  const toggle = async (venueId: number, userId: number, currentlyChecked: boolean) => {
+  const toggle = async (venueId: number, userId: number, present: boolean) => {
     setBusy(true);
     try {
-      if (currentlyChecked) await attendanceApi.remove(date, venueId, userId);
-      else await attendanceApi.add(date, venueId, userId);
+      await attendanceApi.set(date, venueId, userId, !present);
       await reload();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -111,7 +110,7 @@ export function AttendanceEditor() {
 
       <p className="muted" style={{ margin: 0, lineHeight: 1.7, fontSize: '0.88rem' }}>
         日付を選び、その日いた会場ごとに「いた人」をチェックしてください。チェックした人が<b>場所代の頭割り対象</b>になります。
-        「入力」バッジはKPI入力済みで外せません。入力を忘れた人はチェックで追加できます。
+        入力を忘れた人はチェックで追加、<b>会場を間違えた人はチェックを外して除外</b>できます（「入力」バッジ＝KPI入力済み。外すと「除外中」表示）。
       </p>
 
       {loading || !data ? (
@@ -147,25 +146,32 @@ export function AttendanceEditor() {
                   <div className="row wrap" style={{ gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}>
                     {data.allMembers.map((m) => {
                       const mem = v.members.find((x) => x.userId === m.id);
-                      const checked = !!mem;
-                      const locked = mem?.source === 'kpi' || mem?.source === 'both';
+                      const present = mem?.present ?? false;
+                      const hasKpi = mem?.hasKpi ?? false;
                       return (
-                        <label key={m.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', opacity: locked ? 0.85 : 1 }}>
+                        <label key={m.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', opacity: present ? 1 : 0.55 }}>
                           <input
                             type="checkbox"
-                            checked={checked}
-                            disabled={busy || locked}
-                            onChange={() => toggle(v.venueId, m.id, checked)}
+                            checked={present}
+                            disabled={busy}
+                            onChange={() => toggle(v.venueId, m.id, present)}
                           />
                           {m.name}
-                          {locked && <span className="faint" style={{ fontSize: '0.72rem' }}>入力</span>}
+                          {hasKpi && (
+                            <span className="faint" style={{ fontSize: '0.72rem' }}>{present ? '入力' : '入力(除外中)'}</span>
+                          )}
                         </label>
                       );
                     })}
                   </div>
-                  <div className="faint" style={{ fontSize: '0.78rem', marginTop: 6 }}>
-                    出席 {v.members.length} 名{v.cost != null && v.members.length > 0 ? ` ／ 1人あたり ${formatNumber(Math.round(v.cost / v.members.length))}円` : ''}
-                  </div>
+                  {(() => {
+                    const presentCount = v.members.filter((m) => m.present).length;
+                    return (
+                      <div className="faint" style={{ fontSize: '0.78rem', marginTop: 6 }}>
+                        出席 {presentCount} 名{v.cost != null && presentCount > 0 ? ` ／ 1人あたり ${formatNumber(Math.round(v.cost / presentCount))}円` : ''}
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>

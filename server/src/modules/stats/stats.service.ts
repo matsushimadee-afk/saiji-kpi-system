@@ -502,7 +502,7 @@ async function computeVenueCost(
   }
   if (costMap.size === 0) return { summary: [], details: [] };
 
-  // 2) 出席者 = KPI入力者 ∪ 手動出席(venue_attendance) の (日付×会場×担当) 集合
+  // 2) 出席者 = KPI入力を基本に、venue_attendance(present) で上書き
   const kpiRows = await db()('kpi_entries')
     .where('is_active', true)
     .whereNotNull('venue_id')
@@ -512,18 +512,31 @@ async function computeVenueCost(
   const attRows = await db()('venue_attendance')
     .where('entry_date', '>=', from)
     .where('entry_date', '<=', to)
-    .select('entry_date as date', 'venue_id as venue_id', 'user_id as user_id');
+    .select('entry_date as date', 'venue_id as venue_id', 'user_id as user_id', 'present');
   const users = await db()('users').select('id', 'display_name', 'department_id');
   const userMap = new Map<number, { name: string; dept: number | null }>(
     (users as any[]).map((u) => [u.id, { name: u.display_name, dept: u.department_id ?? null }]),
   );
 
-  // (日付×会場×担当) をユニオン（KPI入力と手動出席の重複は自動で除外）
-  const attend = new Map<string, { date: string; venueId: number; userId: number }>();
-  for (const r of [...(kpiRows as any[]), ...(attRows as any[])]) {
+  // KPI入力の (日付×会場×担当)
+  const baseSet = new Set<string>();
+  for (const r of kpiRows as any[]) {
     if (r.venue_id == null || r.user_id == null) continue;
-    const date = toDateStr(r.date);
-    attend.set(`${date}||${r.venue_id}||${r.user_id}`, { date, venueId: r.venue_id, userId: r.user_id });
+    baseSet.add(`${toDateStr(r.date)}||${r.venue_id}||${r.user_id}`);
+  }
+  // 手動の上書き（present=true:含める / false:外す）
+  const overrideMap = new Map<string, boolean>();
+  for (const r of attRows as any[]) {
+    if (r.venue_id == null || r.user_id == null) continue;
+    overrideMap.set(`${toDateStr(r.date)}||${r.venue_id}||${r.user_id}`, r.present === true || r.present === 1);
+  }
+  // 最終的な出席（上書きがあればそれ、無ければKPI入力の有無）
+  const attend = new Map<string, { date: string; venueId: number; userId: number }>();
+  for (const key of new Set<string>([...baseSet, ...overrideMap.keys()])) {
+    const present = overrideMap.has(key) ? overrideMap.get(key)! : baseSet.has(key);
+    if (!present) continue;
+    const [date, v, u] = key.split('||');
+    attend.set(key, { date, venueId: Number(v), userId: Number(u) });
   }
 
   // 頭割りの分母（部署に関わらず、その会場にいた実人数）

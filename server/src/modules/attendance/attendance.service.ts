@@ -17,10 +17,10 @@ export async function getDateAttendance(date: string): Promise<DateAttendance> {
     .where({ entry_date: date, is_active: true })
     .whereNotNull('venue_id')
     .distinct('venue_id as venue_id', 'user_id as user_id');
-  // 手動出席
+  // 手動の上書き（present）
   const att = await db()('venue_attendance')
     .where({ entry_date: date })
-    .select('venue_id as venue_id', 'user_id as user_id');
+    .select('venue_id as venue_id', 'user_id as user_id', 'present');
 
   // チェックリスト用の全メンバー（有効・管理者以外）
   const users = await db()('users')
@@ -31,20 +31,20 @@ export async function getDateAttendance(date: string): Promise<DateAttendance> {
     .select('id', 'display_name');
 
   const kpiSet = new Set((kpi as any[]).map((r) => `${r.venue_id}||${r.user_id}`));
-  const attSet = new Set((att as any[]).map((r) => `${r.venue_id}||${r.user_id}`));
+  const overrideMap = new Map<string, boolean>();
+  for (const r of att as any[]) {
+    overrideMap.set(`${r.venue_id}||${r.user_id}`, r.present === true || r.present === 1);
+  }
 
   const venuesOut = (venues as any[]).map((vn) => {
     const members: AttendanceMember[] = [];
     for (const u of users as any[]) {
       const k = `${vn.venueId}||${u.id}`;
-      const inK = kpiSet.has(k);
-      const inA = attSet.has(k);
-      if (!inK && !inA) continue;
-      members.push({
-        userId: u.id,
-        name: u.display_name,
-        source: inK && inA ? 'both' : inK ? 'kpi' : 'manual',
-      });
+      const hasKpi = kpiSet.has(k);
+      const hasOverride = overrideMap.has(k);
+      if (!hasKpi && !hasOverride) continue; // 何の状態も無い人は返さない（未出席扱い）
+      const present = hasOverride ? overrideMap.get(k)! : hasKpi;
+      members.push({ userId: u.id, name: u.display_name, present, hasKpi });
     }
     return { venueId: vn.venueId, venueName: vn.venueName, cost: vn.cost ?? null, members };
   });
@@ -56,18 +56,26 @@ export async function getDateAttendance(date: string): Promise<DateAttendance> {
   };
 }
 
-/** (日付, 会場, 担当) の出席を追加（既にあれば何もしない） */
-export async function addAttendance(date: string, venueId: number, userId: number, createdBy: number): Promise<void> {
+/**
+ * (日付, 会場, 担当) の出席状態を設定する。
+ * present=true: 場所代の対象に含める（入力漏れの追加）
+ * present=false: 場所代の対象から外す（会場ミスの除外。KPI入力があっても外れる）
+ */
+export async function setAttendance(
+  date: string,
+  venueId: number,
+  userId: number,
+  present: boolean,
+  createdBy: number,
+): Promise<void> {
   const existing = await db()('venue_attendance')
     .where({ entry_date: date, venue_id: venueId, user_id: userId })
     .first();
-  if (existing) return;
-  await insertId(
-    db()('venue_attendance').insert({ entry_date: date, venue_id: venueId, user_id: userId, created_by: createdBy }),
-  );
-}
-
-/** (日付, 会場, 担当) の手動出席を削除（KPI入力由来は消せない＝この行が無いだけ） */
-export async function removeAttendance(date: string, venueId: number, userId: number): Promise<void> {
-  await db()('venue_attendance').where({ entry_date: date, venue_id: venueId, user_id: userId }).del();
+  if (existing) {
+    await db()('venue_attendance').where({ id: existing.id }).update({ present, updated_at: db().fn.now() });
+  } else {
+    await insertId(
+      db()('venue_attendance').insert({ entry_date: date, venue_id: venueId, user_id: userId, present, created_by: createdBy }),
+    );
+  }
 }
