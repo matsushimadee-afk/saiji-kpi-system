@@ -11,6 +11,18 @@ import { DailyVenueManager } from './DailyVenueManager';
 import { useMySummary } from './useMySummary';
 import styles from './SalesPage.module.css';
 
+// 催事場の所感のフォーマット（キントーンの差し込みフォーマットに合わせる。提出画面に最初から表示）
+const VENUE_THOUGHTS_FORMAT = `◾️集客数(ブース前通過人数)
+150人以上 or 150人未満
+◾️平均年齢
+◯歳ぐらい
+◾️顧客層
+ファミリー or 単身 or 主婦
+◾️他の催事開催
+商材名 or なし
+◾️催事場所についての所感
+具体的に`;
+
 export function SalesPage() {
   const user = useAuthStore((s) => s.user)!;
   const toast = useToast();
@@ -27,8 +39,7 @@ export function SalesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [strategy, setStrategy] = useState('');
-  const [roleplay, setRoleplay] = useState('');
-  const [kpiThoughts, setKpiThoughts] = useState('');
+  const [venueThoughts, setVenueThoughts] = useState(VENUE_THOUGHTS_FORMAT);
 
   const reloadDaily = () => {
     void dailyVenueApi.list().then((v) => {
@@ -95,11 +106,10 @@ export function SalesPage() {
   const submitReport = async () => {
     setSubmitting(true);
     try {
-      await kintoneApi.submitDailyReport({ notes: { strategy, roleplay, kpiThoughts } });
+      await kintoneApi.submitDailyReport({ notes: { strategy, venueThoughts } });
       setReportOpen(false);
       setStrategy('');
-      setRoleplay('');
-      setKpiThoughts('');
+      setVenueThoughts(VENUE_THOUGHTS_FORMAT);
       toast.show('日報を提出しました ✅');
     } catch (err) {
       toast.error(getErrorMessage(err, '日報の提出に失敗しました'));
@@ -245,24 +255,13 @@ export function SalesPage() {
             />
           </label>
           <label className={styles.reportField}>
-            <span className={styles.reportLabel}>ロープレに対しての気付き</span>
+            <span className={styles.reportLabel}>催事場の所感</span>
             <textarea
               className={styles.reportComment}
-              value={roleplay}
-              onChange={(e) => setRoleplay(e.target.value)}
-              placeholder="ロープレの気付き（任意）"
-              rows={3}
-              maxLength={2000}
-            />
-          </label>
-          <label className={styles.reportField}>
-            <span className={styles.reportLabel}>KPIからの所感</span>
-            <textarea
-              className={styles.reportComment}
-              value={kpiThoughts}
-              onChange={(e) => setKpiThoughts(e.target.value)}
-              placeholder="KPIを見ての所感（任意）"
-              rows={3}
+              value={venueThoughts}
+              onChange={(e) => setVenueThoughts(e.target.value)}
+              placeholder="催事場の所感（任意）"
+              rows={12}
               maxLength={2000}
             />
           </label>

@@ -17,8 +17,7 @@ kintoneRouter.post(
     const rawNotes = (req.body?.notes ?? {}) as Record<string, unknown>;
     const notes = {
       strategy: pick(rawNotes.strategy),
-      roleplay: pick(rawNotes.roleplay),
-      kpiThoughts: pick(rawNotes.kpiThoughts),
+      venueThoughts: pick(rawNotes.venueThoughts),
     };
     res.json(await kintone.submitDailyReport(me, date, notes));
   }),

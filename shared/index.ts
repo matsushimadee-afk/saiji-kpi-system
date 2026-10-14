@@ -245,10 +245,8 @@ export interface DailyReportResult {
 export interface DailyReportNotes {
   /** 今日の気付きor戦略 */
   strategy?: string;
-  /** ロープレに対しての気付き */
-  roleplay?: string;
-  /** KPIからの所感 */
-  kpiThoughts?: string;
+  /** 催事場の所感 */
+  venueThoughts?: string;
 }
 
 /** 日報提出リクエスト（当日の数値＋任意の自由記述メモ・場所代） */

@@ -26,8 +26,7 @@ const KPI_TO_KINTONE_LABEL: Record<string, string> = {
 /** 自由記述メモのキー → キントーンのフィールド名（ラベル） */
 const NOTE_TO_KINTONE_LABEL: Record<keyof DailyReportNotes, string> = {
   strategy: '今日の気付きor戦略',
-  roleplay: 'ロープレに対しての気付き',
-  kpiThoughts: 'KPIからの所感',
+  venueThoughts: '催事場の所感',
 };
 
 const BASE = () => `https://${env.kintone.subdomain}.cybozu.com`;
