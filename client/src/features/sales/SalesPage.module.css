@@ -142,6 +142,15 @@
 .reportFields { display: flex; flex-direction: column; gap: var(--space-4); }
 .reportField { display: flex; flex-direction: column; gap: 6px; }
 .reportLabel { font-weight: 700; font-size: 0.9rem; }
+.req {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #e11d48;
+  background: color-mix(in srgb, #e11d48 14%, transparent);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 6px;
+}
 .reportInput {
   width: 100%;
   box-sizing: border-box;

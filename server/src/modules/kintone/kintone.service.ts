@@ -99,7 +99,7 @@ export async function submitDailyReport(
   // 空提出（当日カウンター未入力）を防ぐ。0だけのレコードがキントーンに溜まるのを避ける。
   const totalCount = [...countByKpiId.values()].reduce((a, b) => a + b, 0);
   if (totalCount === 0) {
-    throw AppError.badRequest('本日の入力がまだありません。カウンターを押してから提出してください。');
+    throw AppError.badRequest(`稼働日(${date})のあなたの入力がありません。日付を確認するか、カウントしてから提出してください。`);
   }
 
   // 当日の会場（最新入力の会場）

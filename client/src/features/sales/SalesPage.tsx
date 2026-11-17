@@ -40,6 +40,7 @@ export function SalesPage() {
   const [reportOpen, setReportOpen] = useState(false);
   const [strategy, setStrategy] = useState('');
   const [venueThoughts, setVenueThoughts] = useState(VENUE_THOUGHTS_FORMAT);
+  const [reportDate, setReportDate] = useState(todayStr());
 
   const reloadDaily = () => {
     void dailyVenueApi.list().then((v) => {
@@ -103,13 +104,21 @@ export function SalesPage() {
     [todayVenues, venueId],
   );
 
+  // 稼働日・今日の気付き・催事場の所感は必須
+  const reportValid = Boolean(reportDate) && strategy.trim().length > 0 && venueThoughts.trim().length > 0;
+
   const submitReport = async () => {
+    if (!reportValid) {
+      toast.error('稼働日・今日の気付き・戦略・催事場の所感はすべて必須です');
+      return;
+    }
     setSubmitting(true);
     try {
-      await kintoneApi.submitDailyReport({ notes: { strategy, venueThoughts } });
+      await kintoneApi.submitDailyReport({ notes: { strategy, venueThoughts }, date: reportDate });
       setReportOpen(false);
       setStrategy('');
       setVenueThoughts(VENUE_THOUGHTS_FORMAT);
+      setReportDate(todayStr());
       toast.show('日報を提出しました ✅');
     } catch (err) {
       toast.error(getErrorMessage(err, '日報の提出に失敗しました'));
@@ -232,35 +241,45 @@ export function SalesPage() {
             <Button variant="ghost" onClick={() => setReportOpen(false)} disabled={submitting}>
               キャンセル
             </Button>
-            <Button variant="primary" onClick={submitReport} disabled={submitting}>
+            <Button variant="primary" onClick={submitReport} disabled={submitting || !reportValid}>
               {submitting ? '提出中…' : 'この内容で提出'}
             </Button>
           </>
         }
       >
         <p className={styles.reportLead}>
-          本日の数値でキントーンに日報を作成します（場所代は本日の会場設定から自動反映）。下の記入欄はすべて任意です。
+          選んだ<b>稼働日</b>の数値でキントーンに日報を作成します（場所代は会場設定から自動反映）。<b>すべて必須</b>です。
         </p>
         <div className={styles.reportFields}>
           <label className={styles.reportField}>
-            <span className={styles.reportLabel}>今日の気付き・戦略</span>
+            <span className={styles.reportLabel}>稼働日 <span className={styles.req}>必須</span></span>
+            <input
+              type="date"
+              className={styles.reportInput}
+              value={reportDate}
+              max={todayStr()}
+              onChange={(e) => setReportDate(e.target.value || todayStr())}
+            />
+          </label>
+          <label className={styles.reportField}>
+            <span className={styles.reportLabel}>今日の気付き・戦略 <span className={styles.req}>必須</span></span>
             <textarea
               className={styles.reportComment}
               value={strategy}
               onChange={(e) => setStrategy(e.target.value)}
-              placeholder="今日の気付き・戦略（任意）"
+              placeholder="今日の気付き・戦略"
               rows={4}
               maxLength={2000}
               autoFocus
             />
           </label>
           <label className={styles.reportField}>
-            <span className={styles.reportLabel}>催事場の所感</span>
+            <span className={styles.reportLabel}>催事場の所感 <span className={styles.req}>必須</span></span>
             <textarea
               className={styles.reportComment}
               value={venueThoughts}
               onChange={(e) => setVenueThoughts(e.target.value)}
-              placeholder="催事場の所感（任意）"
+              placeholder="催事場の所感"
               rows={12}
               maxLength={2000}
             />

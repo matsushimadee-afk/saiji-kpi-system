@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { authenticate, requireUser } from '../../middleware/auth.js';
 import { todayDate, isValidDate } from '../../utils/datetime.js';
+import { AppError } from '../../utils/AppError.js';
 import * as kintone from './kintone.service.js';
 
 export const kintoneRouter = Router();
@@ -19,6 +20,9 @@ kintoneRouter.post(
       strategy: pick(rawNotes.strategy),
       venueThoughts: pick(rawNotes.venueThoughts),
     };
+    if (!notes.strategy?.trim() || !notes.venueThoughts?.trim()) {
+      throw AppError.badRequest('今日の気付き・戦略と催事場の所感は必須です');
+    }
     res.json(await kintone.submitDailyReport(me, date, notes));
   }),
 );
